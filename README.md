@@ -150,14 +150,6 @@ Rakshak is intentionally designed to avoid surveillance creep, bias amplificatio
 
 <h2>Repository Contents</h2>
 
-<ul>
-<li><code>README.md</code> – Project overview</li>
-<li><code>Requirements.md</code> – Functional and non-functional requirements</li>
-<li><code>Design.md</code> – System architecture and technical design</li>
-<li><code>LICENSE</code> – MIT License</li>
-</ul>
-
-## Repository Contents
 
 - [`README.md`](./README.md) – Project overview  
 - [`requirements.md`](./requirements.md) – Functional and non-functional requirements  
