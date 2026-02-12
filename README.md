@@ -157,6 +157,14 @@ Rakshak is intentionally designed to avoid surveillance creep, bias amplificatio
 <li><code>LICENSE</code> – MIT License</li>
 </ul>
 
+## Repository Contents
+
+- [`README.md`](./README.md) – Project overview  
+- [`requirements.md`](./requirements.md) – Functional and non-functional requirements  
+- [`design.md`](./design.md) – System architecture and technical design  
+- [`LICENSE`](./LICENSE) – MIT License
+
+
 <hr/>
 
 <h2 align="center">Rakshak helps people see risk forming — before situations escalate.</h2>
