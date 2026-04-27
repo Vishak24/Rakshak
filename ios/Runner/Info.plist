@@ -48,7 +48,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>RAKSHAK needs your location to assess safety risks and provide alerts</string>
 	<key>GMSApiKey</key>
-	<string>YOUR_GOOGLE_MAPS_API_KEY_HERE</string>
+	<string>REMOVED_SEE_ENV_EXAMPLE</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

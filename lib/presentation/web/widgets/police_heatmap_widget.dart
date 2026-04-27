@@ -63,7 +63,7 @@ class _PoliceHeatmapWidgetState extends ConsumerState<PoliceHeatmapWidget> {
 
   void _updateHeatmapOverlays(
     List<ZoneRisk> zones,
-    Map<String, dynamic> patrolRecords,
+    Map<String, DateTime> patrolRecords,
   ) {
     final circles = <Circle>{};
     final markers = <Marker>{};
@@ -95,7 +95,7 @@ class _PoliceHeatmapWidgetState extends ConsumerState<PoliceHeatmapWidget> {
           center: latLng,
           radius: MapConstants.heatmapRadius * 10, // Scale for visibility
           fillColor: zone.assessment.displayColor
-              .withOpacity(MapConstants.heatmapOpacity * weight),
+              .withValues(alpha: MapConstants.heatmapOpacity * weight),
           strokeColor: zone.assessment.displayColor,
           strokeWidth: 1,
         ),

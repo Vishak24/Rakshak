@@ -1,4 +1,6 @@
-/// Request payload for /predict endpoint
+import '../constants/pincode_map.dart';
+
+/// Request payload for POST /predict
 class RiskPredictionRequest {
   final double latitude;
   final double longitude;
@@ -28,59 +30,75 @@ class RiskPredictionRequest {
     required this.isNight,
     required this.isEvening,
     required this.isRushHour,
-    required this.reportingDelayMinutes,
-    required this.responseTimeMinutes,
-    required this.victimAge,
-    required this.signalCountLast7d,
-    required this.signalCountLast30d,
-    required this.signalDensityRatio,
+    this.reportingDelayMinutes = 20,
+    this.responseTimeMinutes = 15,
+    this.victimAge = 25,
+    this.signalCountLast7d = 5,
+    this.signalCountLast30d = 20,
+    this.signalDensityRatio = 0.25,
     required this.areaEncoded,
     required this.neighborhoodEncoded,
   });
 
-  /// Creates a request from lat/lon with time fields derived from now
-  /// and sensible defaults for demographic/signal fields.
+  /// Build from live GPS coordinates + pincode. Time derived from now.
+  static RiskPredictionRequest fromGps(
+    double lat,
+    double lng,
+    int pincode,
+  ) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final dow = now.weekday % 7; // 0=Sunday … 6=Saturday
+    return RiskPredictionRequest(
+      latitude: lat,
+      longitude: lng,
+      pincode: pincode,
+      hour: hour,
+      dayOfWeek: dow,
+      isWeekend: (dow == 0 || dow == 6) ? 1 : 0,
+      isNight: (hour >= 22 || hour <= 5) ? 1 : 0,
+      isEvening: (hour >= 17 && hour <= 21) ? 1 : 0,
+      isRushHour: [8, 9, 17, 18, 19].contains(hour) ? 1 : 0,
+      areaEncoded: pincodeToAreaEncoded[pincode] ?? 0,
+      neighborhoodEncoded: pincodeToNeighborhoodEncoded[pincode] ?? 0,
+    );
+  }
+
+  /// Build for Judge Mode — hour is overridden by the slider.
+  /// Uses pincode-specific coordinates when available.
+  static RiskPredictionRequest forJudge(
+    double lat,
+    double lng,
+    int pincode,
+    int hour,
+  ) {
+    final now = DateTime.now();
+    final dow = now.weekday % 7;
+    // Use the pincode's known coordinates if available, else fall back to GPS
+    final effectiveLat = pincodeToLat[pincode] ?? lat;
+    final effectiveLng = pincodeToLon[pincode] ?? lng;
+    return RiskPredictionRequest(
+      latitude: effectiveLat,
+      longitude: effectiveLng,
+      pincode: pincode,
+      hour: hour,
+      dayOfWeek: dow,
+      isWeekend: (dow == 0 || dow == 6) ? 1 : 0,
+      isNight: (hour >= 22 || hour <= 5) ? 1 : 0,
+      isEvening: (hour >= 17 && hour <= 21) ? 1 : 0,
+      isRushHour: [8, 9, 17, 18, 19].contains(hour) ? 1 : 0,
+      areaEncoded: pincodeToAreaEncoded[pincode] ?? 0,
+      neighborhoodEncoded: pincodeToNeighborhoodEncoded[pincode] ?? 0,
+    );
+  }
+
+  /// Legacy factory kept for backward compat with existing callers.
   factory RiskPredictionRequest.fromLocation({
     required double latitude,
     required double longitude,
     int pincode = 600001,
-    int reportingDelayMinutes = 30,
-    int responseTimeMinutes = 20,
-    int victimAge = 25,
-    int signalCountLast7d = 8,
-    int signalCountLast30d = 35,
-    double signalDensityRatio = 0.23,
-    int areaEncoded = 3,
-    int neighborhoodEncoded = 7,
-  }) {
-    final now = DateTime.now();
-    final h = now.hour;
-    final dow = now.weekday % 7; // 0=Sun … 6=Sat
-    final weekend = (dow == 0 || dow == 6) ? 1 : 0;
-    final night = (h >= 21 || h < 6) ? 1 : 0;
-    final evening = (h >= 18 && h < 21) ? 1 : 0;
-    final rushHour = ((h >= 8 && h <= 10) || (h >= 17 && h <= 19)) ? 1 : 0;
-
-    return RiskPredictionRequest(
-      latitude: latitude,
-      longitude: longitude,
-      pincode: pincode,
-      hour: h,
-      dayOfWeek: dow,
-      isWeekend: weekend,
-      isNight: night,
-      isEvening: evening,
-      isRushHour: rushHour,
-      reportingDelayMinutes: reportingDelayMinutes,
-      responseTimeMinutes: responseTimeMinutes,
-      victimAge: victimAge,
-      signalCountLast7d: signalCountLast7d,
-      signalCountLast30d: signalCountLast30d,
-      signalDensityRatio: signalDensityRatio,
-      areaEncoded: areaEncoded,
-      neighborhoodEncoded: neighborhoodEncoded,
-    );
-  }
+  }) =>
+      fromGps(latitude, longitude, pincode);
 
   Map<String, dynamic> toJson() => {
         'latitude': latitude,

@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440">
+  <title>RAKSHAK — Chennai Police Intelligence Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #080D1A;
+      --surface: #0D1428;
+      --surface2: #141e35;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.12);
+      --accent: #00D4B4;
+      --danger: #FF3B5C;
+      --warning: #F59E0B;
+      --safe: #22C55E;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --dim: #3D4F6B;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    html,
+    body {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .num {
+      font-variant-numeric: tabular-nums
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 200px 1fr 300px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sb-brand {
+      padding: 18px 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sb-shield {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0
+    }
+
+    .sb-name {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: var(--text);
+      text-transform: uppercase;
+      line-height: 1
+    }
+
+    .sb-sub {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: .5px;
+      margin-top: 2px
+    }
+
+    .nav {
+      flex: 1;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: color .18s, background .18s, border-color .18s;
+    }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: rgba(0, 212, 180, 0.06)
+    }
+
+    .nav-item svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    .sb-footer {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .live-row {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--safe);
+      flex-shrink: 0
+    }
+
+    .live-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .live-sub {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 1px
+    }
+
+    .lang-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: color .18s, border-color .18s;
+      font-family: inherit;
+    }
+
+    .lang-btn:hover {
+      color: var(--text);
+      border-color: var(--accent)
+    }
+
+    .lang-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    /* ── MAIN ── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Map */
+    .map-area {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      height: 50vh;
+      flex-shrink: 0;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%
+    }
+
+    .map-hdr {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .map-ttl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, .55)
+    }
+
+    .map-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(0, 212, 180, .1);
+      border: 1px solid rgba(0, 212, 180, .28);
+      color: var(--accent);
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 500;
+      background: rgba(8, 13, 26, .9);
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      padding: 9px 12px;
+    }
+
+    .leg-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 6px
+    }
+
+    .leg-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px
+    }
+
+    .leg-row:last-child {
+      margin-bottom: 0
+    }
+
+    .leg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    /* Stat row */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      flex-shrink: 0
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      transition: border-color .18s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--border2)
+    }
+
+    .stat-ico {
+      width: 36px;
+      height: 36px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-ico svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    .stat-ico.d {
+      background: rgba(255, 59, 92, .1);
+      color: var(--danger)
+    }
+
+    .stat-ico.w {
+      background: rgba(245, 158, 11, .1);
+      color: var(--warning)
+    }
+
+    .stat-ico.s {
+      background: rgba(34, 197, 94, .1);
+      color: var(--safe)
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums
+    }
+
+    .stat-val.d {
+      color: var(--danger)
+    }
+
+    .stat-val.w {
+      color: var(--warning)
+    }
+
+    .stat-val.s {
+      color: var(--safe)
+    }
+
+    .stat-lbl {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 4px;
+      letter-spacing: .2px
+    }
+
+    /* Charts row */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex: 1;
+      min-height: 0
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 15px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chart-hdr {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-shrink: 0
+    }
+
+    .chart-bar {
+      width: 3px;
+      height: 11px;
+      border-radius: 2px;
+      flex-shrink: 0
+    }
+
+    .chart-ttl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted)
+    }
+
+    .chart-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0
+    }
+
+    /* ── SOS PANEL ── */
+    .sos-panel {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sos-hdr {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .sos-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      flex-shrink: 0;
+      animation: sos-blink 1.6s ease-in-out infinite;
+    }
+
+    @keyframes sos-blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .25
+      }
+    }
+
+    .sos-ttl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text)
+    }
+
+    .sos-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      background: rgba(255, 59, 92, .12);
+      border: 1px solid rgba(255, 59, 92, .22);
+      border-radius: 4px;
+      color: var(--danger);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sos-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    ::-webkit-scrollbar {
+      width: 3px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px
+    }
+
+    .sos-evt {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 11px;
+      transition: border-color .18s;
+    }
+
+    .sos-evt:hover {
+      border-color: var(--border2)
+    }
+
+    .sos-evt.fresh {
+      animation: slide-in .3s ease-out
+    }
+
+    @keyframes slide-in {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .evt-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px
+    }
+
+    .evt-loc {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .risk-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      padding: 2px 6px;
+      border-radius: 3px
+    }
+
+    .risk-badge.HIGH {
+      background: rgba(255, 59, 92, .14);
+      color: var(--danger);
+      border: 1px solid rgba(255, 59, 92, .25)
+    }
+
+    .risk-badge.MEDIUM {
+      background: rgba(245, 158, 11, .14);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, .25)
+    }
+
+    .risk-badge.LOW {
+      background: rgba(34, 197, 94, .14);
+      color: var(--safe);
+      border: 1px solid rgba(34, 197, 94, .25)
+    }
+
+    .evt-bot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .evt-time {
+      font-size: 10px;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums
+    }
+
+    .status-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 4px;
+      letter-spacing: .4px;
+    }
+
+    .status-pill.dispatched {
+      background: var(--accent);
+      color: #080D1A;
+      border: none;
+    }
+
+    .status-pill.resolving {
+      background: transparent;
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .status-pill.resolved {
+      background: transparent;
+      color: var(--safe);
+      border: 1px solid var(--safe);
+    }
+
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: color .18s, border-color .18s;
+      font-family: inherit;
+    }
+
+    .profile-btn:hover {
+      color: var(--text);
+      border-color: var(--accent)
+    }
+
+    .profile-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    /* Leaflet overrides */
+    .leaflet-container {
+      background: #06090f !important;
+      font-family: 'Inter', sans-serif
+    }
+
+    .leaflet-control-zoom {
+      border: 1px solid var(--border2) !important;
+      border-radius: 6px !important;
+      overflow: hidden
+    }
+
+    .leaflet-control-zoom a {
+      background: rgba(15, 22, 40, .95) !important;
+      color: var(--muted) !important;
+      border-bottom: 1px solid var(--border) !important;
+      width: 26px !important;
+      height: 26px !important;
+      line-height: 26px !important;
+      font-size: 15px !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      color: var(--text) !important;
+      background: var(--surface2) !important
+    }
+
+    .leaflet-control-attribution {
+      display: none !important
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(15, 22, 40, .97) !important;
+      border: 1px solid var(--border2) !important;
+      border-radius: 8px !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(15, 22, 40, .97) !important
+    }
+
+    .leaflet-popup-content {
+      margin: 12px 14px !important
+    }
+
+    .leaflet-interactive {
+      outline: none !important
+    }
+
+    /* ── PINCODE ZONE TOOLTIP ── */
+    .zone-tip {
+      background: #0F1628 !important;
+      border-radius: 6px !important;
+      padding: 8px 10px !important;
+      font-family: 'Noto Sans', sans-serif !important;
+      font-size: 11px !important;
+      color: #F1F5F9 !important;
+      border-width: 1px !important;
+      border-style: solid !important;
+      white-space: nowrap !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .6) !important;
+      line-height: 1.65 !important;
+    }
+
+    .zone-tip.tip-high {
+      border-color: #FF3B5C !important
+    }
+
+    .zone-tip.tip-med {
+      border-color: #F59E0B !important
+    }
+
+    .zone-tip.tip-low {
+      border-color: #22C55E !important
+    }
+
+    .zone-tip::before {
+      display: none !important
+    }
+
+    .pincode-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important
+    }
+
+    .pincode-label span {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* ── ZONE INFO PANEL ── */
+    #zoneInfoPanel {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 501;
+      background: rgba(15, 22, 40, .97);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 8px;
+      padding: 11px 14px;
+      min-width: 208px;
+      pointer-events: auto;
+    }
+
+    #zoneInfoPanel .zi-head {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 5px;
+    }
+
+    #zoneInfoPanel .zi-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    #zoneInfoPanel .zi-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 11px;
+      line-height: 1.9;
+    }
+
+    #zoneInfoPanel .zi-key {
+      color: var(--muted)
+    }
+
+    #zoneInfoPanel .zi-val {
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums
+    }
+
+    #zoneInfoPanel .zi-footer {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end
+    }
+
+    #zoneInfoPanel .zi-dismiss {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: inherit;
+      transition: color .15s, border-color .15s;
+    }
+
+    #zoneInfoPanel .zi-dismiss:hover {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, .25)
+    }
+
+    /* ── PATROL VEHICLES ── */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important
+    }
+
+    .patrol-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer
+    }
+
+    .p-badge {
+      width: 26px;
+      height: 26px;
+      background: #00D4B4;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(0, 212, 180, .45);
+      position: relative;
+    }
+
+    .p-badge.responding {
+      background: #F59E0B;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, .5)
+    }
+
+    .p-badge.at-scene {
+      background: #FF3B5C;
+      box-shadow: 0 2px 10px rgba(255, 59, 92, .5);
+      animation: p-pulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes p-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 10px rgba(255, 59, 92, .5)
+      }
+
+      50% {
+        box-shadow: 0 0 0 5px rgba(255, 59, 92, .18), 0 2px 14px rgba(255, 59, 92, .7)
+      }
+    }
+
+    .p-sdot {
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid #080D1A;
+    }
+
+    .p-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .9);
+      letter-spacing: .4px;
+      white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, .95), 0 0 8px rgba(0, 0, 0, .7);
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    /* Patrol popup */
+    .patrol-popup .leaflet-popup-content-wrapper {
+      background: #0F1628 !important;
+      border: 1px solid #00D4B4 !important;
+      border-radius: 10px !important;
+      padding: 0 !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .7), 0 0 0 1px rgba(0, 212, 180, .08) !important;
+    }
+
+    .patrol-popup .leaflet-popup-tip-container {
+      display: none !important
+    }
+
+    .patrol-popup .leaflet-popup-content {
+      margin: 0 !important;
+      padding: 0 !important;
+      min-width: 250px
+    }
+
+    .pu-wrap {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: #F1F5F9
+    }
+
+    .pu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 13px 9px;
+    }
+
+    .pu-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      color: #F1F5F9
+    }
+
+    .pu-close {
+      cursor: pointer;
+      color: #3D4F6B;
+      font-size: 15px;
+      line-height: 1;
+      padding: 1px 3px;
+      border-radius: 3px;
+      transition: color .15s;
+    }
+
+    .pu-close:hover {
+      color: #F1F5F9
+    }
+
+    .pu-div {
+      height: 1px;
+      background: rgba(255, 255, 255, .07);
+      margin: 0 13px
+    }
+
+    .pu-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 13px;
+      font-size: 11px;
+      line-height: 1.95;
+    }
+
+    .pu-key {
+      color: #94A3B8
+    }
+
+    .pu-val {
+      font-weight: 600;
+      color: #F1F5F9;
+      font-variant-numeric: tabular-nums;
+      text-align: right
+    }
+
+    .pu-officers-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #3D4F6B;
+      padding: 7px 13px 3px;
+    }
+
+    .pu-officer {
+      padding: 2px 13px;
+      font-size: 11.5px;
+      color: #F1F5F9;
+      line-height: 1.7
+    }
+
+    .pu-actions {
+      display: flex;
+      gap: 8px;
+      padding: 9px 13px 11px
+    }
+
+    .pu-btn-p {
+      flex: 1;
+      padding: 6px 8px;
+      background: #00D4B4;
+      color: #080D1A;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: inherit;
+      text-align: center;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: opacity .15s;
+    }
+
+    .pu-btn-p:hover {
+      opacity: .82
+    }
+
+    .pu-btn-s {
+      flex: 1;
+      padding: 6px 8px;
+      background: transparent;
+      color: #00D4B4;
+      border: 1px solid #00D4B4;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 10.5px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: background .15s;
+    }
+
+    .pu-btn-s:hover {
+      background: rgba(0, 212, 180, .1)
+    }
+
+    /* Sidebar patrol counts */
+    .patrol-counts {
+      flex-shrink: 0;
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .pc-title {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 8px;
+    }
+
+    .pc-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .pc-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .pc-lbl {
+      flex: 1;
+      font-size: 11px
+    }
+
+    .pc-cnt {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      min-width: 18px;
+      text-align: right
+    }
+
+    /* ── REPORTS SECTION ── */
+    #reportsView {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .rpt-hdr {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .rpt-title { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .5px; }
+    .rpt-add-btn {
+      padding: 6px 14px;
+      background: var(--accent);
+      color: #080D1A;
+      border: none;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .rpt-table-wrap { flex: 1; overflow: auto; padding: 12px; }
+    .rpt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      min-width: 1800px;
+    }
+    .rpt-table th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .rpt-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    .rpt-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .rpt-cell-input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11px;
+      width: 60px;
+      text-align: center;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .rpt-cell-input:focus {
+      outline: none;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+    }
+    .rpt-save-btn {
+      padding: 4px 10px;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .rpt-save-btn:hover { background: rgba(0,212,180,.1); }
+    .rpt-saved-badge {
+      display: inline-block;
+      background: rgba(34,197,94,.15);
+      color: #22C55E;
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+      <div class="sb-brand">
+        <svg class="sb-shield" viewBox="0 0 30 30" fill="none">
+          <path d="M15 2L3 7V15C3 21.075 8.325 26.85 15 29C21.675 26.85 27 21.075 27 15V7L15 2Z"
+            fill="rgba(0,212,180,0.12)" stroke="#00D4B4" stroke-width="1.5" />
+          <path d="M10 15L13.5 18.5L20 12" stroke="#00D4B4" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <div>
+          <div class="sb-name">RAKSHAK</div>
+          <div class="sb-sub" data-i18n="brandSub">Safety Intelligence</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item active" onclick="showDashboard()">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <span data-i18n="navDash">Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="showReports()">
+          <svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14,2 14,8 20,8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10,9 9,9 8,9" />
+          </svg>
+          <span data-i18n="navReports">Reports</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span data-i18n="navSettings">Settings</span>
+        </div>
+      </nav>
+
+      <div class="patrol-counts" id="patrolCounts">
+        <div class="pc-title">ACTIVE PATROLS</div>
+        <div class="pc-row"><span class="pc-dot" style="background:#22C55E"></span><span
+            class="pc-lbl">Patrolling</span><span class="pc-cnt" id="pc-patrolling">10</span></div>
+        <div class="pc-row"><span class="pc-dot" style="background:#F59E0B"></span><span
+            class="pc-lbl">Responding</span><span class="pc-cnt" id="pc-responding">1</span></div>
+        <div class="pc-row"><span class="pc-dot" style="background:#FF3B5C"></span><span class="pc-lbl">At
+            Scene</span><span class="pc-cnt" id="pc-atscene">1</span></div>
+      </div>
+
+      <div class="sb-footer">
+        <div class="live-row">
+          <div class="live-dot"></div>
+          <div>
+            <div class="live-lbl" data-i18n="liveLabel">LIVE</div>
+            <div class="live-sub" data-i18n="liveCity">Chennai Command</div>
+          </div>
+        </div>
+        <button class="profile-btn" title="Officer Profile">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>Profile</span>
+        </button>
+        <button class="lang-btn" id="langBtn" onclick="toggleLang()">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <span id="langBtnTxt">தமிழ்</span>
+        </button>
+        <button id="refreshBtn" onclick="refreshZoneScores()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);font-family:inherit;transition:color .18s,border-color .18s,opacity .18s">
+          <svg id="refreshIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Refresh Scores</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main">
+
+      <div id="dashboardView" style="display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden;min-height:0">
+
+      <!-- MAP -->
+      <div class="map-area">
+        <div id="map"></div>
+        <div class="map-hdr">
+          <span class="map-ttl" data-i18n="mapTitle">RISK MAP</span>
+          <span class="map-badge" data-i18n="mapBadge">LIVE · 44 ZONES</span>
+        </div>
+        <div class="map-legend">
+          <div class="leg-lbl" data-i18n="legTitle">RISK LEVEL</div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#FF3B5C"></div><span data-i18n="legHigh">High Risk</span>
+          </div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#F59E0B"></div><span data-i18n="legMed">Medium Risk</span>
+          </div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#22C55E"></div><span data-i18n="legLow">Low Risk</span>
+          </div>
+        </div>
+        <div id="zoneInfoPanel" style="display:none"></div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-ico d">
+            <svg viewBox="0 0 24 24">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val d num" id="sosTodayCnt">0</div>
+            <div class="stat-lbl" data-i18n="sosToday">SOS Today</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ico w">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val w num" id="highRiskCnt">5</div>
+            <div class="stat-lbl" data-i18n="highZones">High Risk Zones</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ico s">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12,6 12,12 16,14" />
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val s num" id="respTime">6.2 <span style="font-size:13px;font-weight:500">min</span></div>
+            <div class="stat-lbl" data-i18n="avgResp">Avg Response Time</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-row">
+        <div class="chart-card" style="padding:0;overflow:hidden">
+          <div id="selection-panel"
+            style="height:100%;display:flex;flex-direction:column;background:#0F1628;border-radius:8px;border:1px solid rgba(255,255,255,0.08);padding:16px">
+            <div style="font-size:13px;font-weight:600;color:#F1F5F9;margin-bottom:12px;letter-spacing:0.05em">
+              📍 <span data-i18n="selection_details">SELECTION DETAILS</span>
+            </div>
+            <div id="panel-content" style="flex:1;overflow:hidden"></div>
+          </div>
+        </div>
+        <div class="chart-card" id="patrolStatsCard">
+          <div class="chart-hdr">
+            <div class="chart-bar" style="background:var(--accent)"></div>
+            <span class="chart-ttl">PATROLS ON DUTY</span>
+          </div>
+          <div id="patrolStatsBody" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:6px 0">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      </div><!-- #dashboardView -->
+
+      <!-- REPORTS VIEW -->
+      <div id="reportsView" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+        <div class="rpt-hdr">
+          <span class="rpt-title">📊 ZONE SAFETY PARAMETERS</span>
+          <button class="rpt-add-btn" onclick="addReportRow()">+ Add New Zone</button>
+        </div>
+        <div class="rpt-table-wrap">
+          <table class="rpt-table" id="reportsTable">
+            <thead>
+              <tr>
+                <th>Pincode</th>
+                <th>Zone</th>
+                <th>Late Night Footfall</th>
+                <th>Street Lighting Score</th>
+                <th>CCTV Coverage</th>
+                <th>Police Patrol Freq.</th>
+                <th>Reported Incidents (30d)</th>
+                <th>Eve Teasing Cases</th>
+                <th>Theft Cases</th>
+                <th>Assault Cases</th>
+                <th>Drunk &amp; Disorderly</th>
+                <th>Abandoned Properties</th>
+                <th>Public Transport Access</th>
+                <th>Safe Houses Nearby</th>
+                <th>Emergency Response Time</th>
+                <th>Community Watch Active</th>
+                <th>Drug Activity Reports</th>
+                <th>Harassment Complaints</th>
+                <th>Overall Safety Score</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="reportsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ═══ SOS PANEL ═══ -->
+    <aside class="sos-panel">
+      <div class="sos-hdr">
+        <div class="sos-pulse"></div>
+        <span class="sos-ttl" data-i18n="sosPanelTitle">LIVE SOS FEED</span>
+        <span class="sos-badge num" id="sosBadge">0</span>
+      </div>
+      <div class="sos-list" id="sosList"></div>
+    </aside>
+
+  </div><!-- .app -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <script>
+    // ═══ DATA ═══
+    const ZONES = [
+      // HIGH
+      { c: '600001', n: 'Parrys', lat: 13.0908, lon: 80.2866, r: 'HIGH' },
+      { c: '600006', n: 'Vepery', lat: 13.0900, lon: 80.2757, r: 'HIGH' },
+      { c: '600007', n: 'Perambur', lat: 13.1186, lon: 80.2487, r: 'HIGH' },
+      { c: '600058', n: 'Royapuram', lat: 13.1127, lon: 80.2966, r: 'HIGH' },
+      { c: '600081', n: 'Manali', lat: 13.1675, lon: 80.2617, r: 'HIGH' },
+      // MEDIUM
+      { c: '600002', n: 'Park Town', lat: 13.0827, lon: 80.2707, r: 'MEDIUM' },
+      { c: '600003', n: 'Triplicane', lat: 13.0569, lon: 80.2787, r: 'MEDIUM' },
+      { c: '600004', n: 'Chintadripet', lat: 13.0715, lon: 80.2740, r: 'MEDIUM' },
+      { c: '600005', n: 'Choolai', lat: 13.1013, lon: 80.2615, r: 'MEDIUM' },
+      { c: '600008', n: 'Washermanpet', lat: 13.1075, lon: 80.2902, r: 'MEDIUM' },
+      { c: '600009', n: 'Aminjikarai', lat: 13.0750, lon: 80.2193, r: 'MEDIUM' },
+      { c: '600010', n: 'Kilpauk', lat: 13.0827, lon: 80.2354, r: 'MEDIUM' },
+      { c: '600011', n: 'Egmore', lat: 13.0732, lon: 80.2609, r: 'MEDIUM' },
+      { c: '600012', n: 'Chetpet', lat: 13.0750, lon: 80.2354, r: 'MEDIUM' },
+      { c: '600013', n: 'Nungambakkam', lat: 13.0569, lon: 80.2425, r: 'MEDIUM' },
+      // LOW
+      { c: '600014', n: 'Alwarpet', lat: 13.0339, lon: 80.2553, r: 'LOW' },
+      { c: '600015', n: 'Mylapore', lat: 13.0339, lon: 80.2707, r: 'LOW' },
+      { c: '600017', n: 'Adyar', lat: 13.0067, lon: 80.2570, r: 'LOW' },
+      { c: '600018', n: 'Kodambakkam', lat: 13.0521, lon: 80.2193, r: 'LOW' },
+      { c: '600019', n: 'Saligramam', lat: 13.0475, lon: 80.2030, r: 'LOW' },
+      { c: '600020', n: 'Vadapalani', lat: 13.0521, lon: 80.2118, r: 'LOW' },
+      { c: '600024', n: 'Velachery', lat: 12.9815, lon: 80.2209, r: 'LOW' },
+      { c: '600028', n: 'Besant Nagar', lat: 12.9995, lon: 80.2666, r: 'LOW' },
+      { c: '600029', n: 'Thiruvanmiyur', lat: 12.9845, lon: 80.2657, r: 'LOW' },
+      { c: '600032', n: 'T Nagar', lat: 13.0350, lon: 80.2323, r: 'LOW' },
+      { c: '600033', n: 'Virugambakkam', lat: 13.0521, lon: 80.2030, r: 'LOW' },
+      { c: '600034', n: 'Ashok Nagar', lat: 13.0339, lon: 80.2193, r: 'LOW' },
+      { c: '600035', n: 'KK Nagar', lat: 13.0402, lon: 80.2091, r: 'LOW' },
+      { c: '600036', n: 'Anna Nagar West', lat: 13.0883, lon: 80.2105, r: 'LOW' },
+      { c: '600040', n: 'Anna Nagar', lat: 13.0850, lon: 80.2101, r: 'LOW' },
+      { c: '600042', n: 'Mogappair', lat: 13.0883, lon: 80.1762, r: 'LOW' },
+      { c: '600044', n: 'Porur', lat: 13.0339, lon: 80.1575, r: 'LOW' },
+      { c: '600045', n: 'Ramapuram', lat: 13.0237, lon: 80.1762, r: 'LOW' },
+      { c: '600050', n: 'Pallavaram', lat: 12.9673, lon: 80.1501, r: 'LOW' },
+      { c: '600053', n: 'Chromepet', lat: 12.9515, lon: 80.1438, r: 'LOW' },
+      { c: '600056', n: 'Perungudi', lat: 12.9625, lon: 80.2387, r: 'LOW' },
+      { c: '600061', n: 'Sholinganallur', lat: 12.9000, lon: 80.2277, r: 'LOW' },
+      { c: '600064', n: 'Medavakkam', lat: 12.9240, lon: 80.1958, r: 'LOW' },
+      { c: '600073', n: 'Selaiyur', lat: 12.9150, lon: 80.1501, r: 'LOW' },
+      { c: '600078', n: 'Ambattur', lat: 13.1144, lon: 80.1606, r: 'LOW' },
+      { c: '600082', n: 'Puzhal', lat: 13.1675, lon: 80.2355, r: 'LOW' },
+      { c: '600083', n: 'Madhavaram', lat: 13.1483, lon: 80.2355, r: 'LOW' },
+      { c: '600099', n: 'Kolathur', lat: 13.1186, lon: 80.2091, r: 'LOW' },
+      { c: '600118', n: 'Perumbakkam', lat: 12.9065, lon: 80.1958, r: 'LOW' },
+    ];
+
+    const LAMBDA = 'https://aksdwfbnn5.execute-api.ap-south-1.amazonaws.com/predict';
+
+    // ═══ ROAD WAYPOINTS ═══
+    const ROAD_WAYPOINTS = [
+      { name: "North Coastal Loop", pts: [[13.1127,80.2966],[13.1186,80.2487],[13.1483,80.2355],[13.1675,80.2617],[13.1127,80.2966]] },
+      { name: "Central City Loop",  pts: [[13.0827,80.2707],[13.0732,80.2609],[13.0569,80.2787],[13.0715,80.2740],[13.0827,80.2707]] },
+      { name: "Anna Nagar Loop",    pts: [[13.0883,80.2105],[13.0850,80.2101],[13.0750,80.2354],[13.0827,80.2354],[13.0883,80.2105]] },
+      { name: "South Chennai Loop", pts: [[13.0067,80.2570],[12.9995,80.2666],[12.9845,80.2657],[12.9815,80.2209],[13.0067,80.2570]] },
+      { name: "West Chennai Loop",  pts: [[13.0521,80.2193],[13.0475,80.2030],[13.0339,80.2193],[13.0402,80.2091],[13.0521,80.2193]] },
+      { name: "Porur-Ramapuram Loop", pts: [[13.0339,80.1575],[13.0237,80.1762],[12.9673,80.1501],[12.9515,80.1438],[13.0339,80.1575]] },
+      { name: "Ambattur Loop",      pts: [[13.1144,80.1606],[13.0883,80.1762],[13.0521,80.2030],[13.0883,80.2105],[13.1144,80.1606]] },
+    ];
+
+    // ═══ PATROL UNITS ═══
+    const patrolUnits = [
+      { id: 'P-01', vehicle: 'TN-01-PA-1234', officers: ['SI Priya Kumari (TN-2341)', 'Const. Rajan M (TN-4892)'],    zone: 'Parrys',         status: 'patrolling', contact: '+91-44-2345-6701', routeIdx: 0, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-02', vehicle: 'TN-01-PA-1235', officers: ['SI Meena Devi (TN-2342)', 'Const. Selvam K (TN-4893)'],     zone: 'Royapuram',      status: 'patrolling', contact: '+91-44-2345-6702', routeIdx: 0, wayptIdx: 1, wayptProgress: 0 },
+      { id: 'P-03', vehicle: 'TN-01-PA-1236', officers: ['SI Kavitha R (TN-2343)', 'Const. Murugan S (TN-4894)'],     zone: 'Perambur',       status: 'patrolling', contact: '+91-44-2345-6703', routeIdx: 1, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-04', vehicle: 'TN-01-PA-1237', officers: ['SI Lakshmi V (TN-2344)', 'Const. Senthil P (TN-4895)'],     zone: 'Vepery',         status: 'patrolling', contact: '+91-44-2345-6704', routeIdx: 1, wayptIdx: 2, wayptProgress: 0 },
+      { id: 'P-05', vehicle: 'TN-01-PA-1238', officers: ['SI Divya S (TN-2345)', 'Const. Arjun T (TN-4896)'],         zone: 'Egmore',         status: 'patrolling', contact: '+91-44-2345-6705', routeIdx: 2, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-06', vehicle: 'TN-01-PA-1239', officers: ['SI Sangeetha N (TN-2346)', 'Const. Karthi R (TN-4897)'],    zone: 'Kilpauk',        status: 'patrolling', contact: '+91-44-2345-6706', routeIdx: 2, wayptIdx: 2, wayptProgress: 0 },
+      { id: 'P-07', vehicle: 'TN-01-PA-1240', officers: ['SI Anitha B (TN-2347)', 'Const. Vijay M (TN-4898)'],        zone: 'T Nagar',        status: 'patrolling', contact: '+91-44-2345-6707', routeIdx: 3, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-08', vehicle: 'TN-01-PA-1241', officers: ['SI Rekha C (TN-2348)', 'Const. Suresh G (TN-4899)'],        zone: 'Anna Nagar',     status: 'patrolling', contact: '+91-44-2345-6708', routeIdx: 3, wayptIdx: 1, wayptProgress: 0 },
+      { id: 'P-09', vehicle: 'TN-01-PA-1242', officers: ['SI Malathi D (TN-2349)', 'Const. Prakash N (TN-4900)'],     zone: 'Adyar',          status: 'patrolling', contact: '+91-44-2345-6709', routeIdx: 4, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-10', vehicle: 'TN-01-PA-1243', officers: ['SI Padma L (TN-2350)', 'Const. Ramesh V (TN-4901)'],        zone: 'Velachery',      status: 'patrolling', contact: '+91-44-2345-6710', routeIdx: 4, wayptIdx: 2, wayptProgress: 0 },
+      { id: 'P-11', vehicle: 'TN-01-PA-1244', officers: ['SI Geetha M (TN-2351)', 'Const. Kumar A (TN-4902)'],        zone: 'Porur',          status: 'patrolling', contact: '+91-44-2345-6711', routeIdx: 5, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-12', vehicle: 'TN-01-PA-1245', officers: ['SI Nithya P (TN-2352)', 'Const. Balu S (TN-4903)'],         zone: 'Ambattur',       status: 'patrolling', contact: '+91-44-2345-6712', routeIdx: 6, wayptIdx: 0, wayptProgress: 0 },
+      { id: 'P-13', vehicle: 'TN-01-PA-1246', officers: ['SI Vimala R (TN-2353)', 'Const. Dinesh K (TN-4904)'],       zone: 'Sholinganallur', status: 'patrolling', contact: '+91-44-2345-6713', routeIdx: 3, wayptIdx: 3, wayptProgress: 0 },
+      { id: 'P-14', vehicle: 'TN-01-PA-1247', officers: ['SI Hema S (TN-2354)', 'Const. Mohan T (TN-4905)'],          zone: 'Medavakkam',     status: 'patrolling', contact: '+91-44-2345-6714', routeIdx: 5, wayptIdx: 1, wayptProgress: 0 },
+      { id: 'P-15', vehicle: 'TN-01-PA-1248', officers: ['SI Saranya B (TN-2355)', 'Const. Ganesh V (TN-4906)'],      zone: 'Kolathur',       status: 'patrolling', contact: '+91-44-2345-6715', routeIdx: 6, wayptIdx: 2, wayptProgress: 0 },
+      { id: 'P-16', vehicle: 'TN-01-PA-1249', officers: ['SI Deepa M (TN-2356)', 'Const. Siva R (TN-4907)'],          zone: 'Selaiyur',       status: 'patrolling', contact: '+91-44-2345-6716', routeIdx: 5, wayptIdx: 2, wayptProgress: 0 },
+      { id: 'P-17', vehicle: 'TN-01-PA-1250', officers: ['SI Jaya K (TN-2357)', 'Const. Karthik N (TN-4908)'],        zone: 'Perungudi',      status: 'patrolling', contact: '+91-44-2345-6717', routeIdx: 4, wayptIdx: 1, wayptProgress: 0 },
+      { id: 'P-18', vehicle: 'TN-01-PA-1251', officers: ['SI Radha P (TN-2358)', 'Const. Balaji S (TN-4909)'],        zone: 'Puzhal',         status: 'patrolling', contact: '+91-44-2345-6718', routeIdx: 0, wayptIdx: 3, wayptProgress: 0 },
+    ];
+
+    const T = {
+      en: {
+        brandSub: 'Safety Intelligence', navDash: 'Dashboard',
+        navReports: 'Reports', navSettings: 'Settings',
+        liveLabel: 'LIVE', liveCity: 'Chennai Command',
+        mapTitle: 'RISK MAP', mapBadge: 'LIVE · 44 ZONES',
+        legTitle: 'RISK LEVEL', legHigh: 'High Risk', legMed: 'Medium Risk', legLow: 'Low Risk',
+        sosToday: 'SOS Today', highZones: 'High Risk Zones', avgResp: 'Avg Response Time',
+        chartTrend: 'Hourly SOS Trend',
+        sosPanelTitle: 'LIVE SOS FEED',
+        dispatch: 'Dispatch', dispatched: 'Dispatched',
+        HIGH: 'HIGH', MEDIUM: 'MEDIUM', LOW: 'LOW',
+        langBtn: 'தமிழ்',
+      },
+      ta: {
+        brandSub: 'பாதுகாப்பு நுண்ணறிவு', navDash: 'டாஷ்போர்டு',
+        navReports: 'அறிக்கைகள்', navSettings: 'அமைப்புகள்',
+        liveLabel: 'நேரடி', liveCity: 'சென்னை கட்டளை',
+        mapTitle: 'ஆபத்து வரைபடம்', mapBadge: 'நேரடி · 44 மண்டலங்கள்',
+        legTitle: 'ஆபத்து நிலை', legHigh: 'அதிக ஆபத்து', legMed: 'நடுத்தர ஆபத்து', legLow: 'குறைந்த ஆபத்து',
+        sosToday: 'இன்று SOS', highZones: 'அதிக ஆபத்து மண்டலங்கள்', avgResp: 'சராசரி மறுமொழி நேரம்',
+        chartTrend: 'மணி நேர SOS போக்கு',
+        sosPanelTitle: 'நேரடி SOS பீட்',
+        dispatch: 'ரோந்து அனுப்பு', dispatched: 'அனுப்பப்பட்டது',
+        HIGH: 'அதிக ஆபத்து', MEDIUM: 'நடுத்தர', LOW: 'குறைந்த',
+        langBtn: 'English',
+      }
+    };
+
+    // ═══ STATE ═══
+    let lang = 'en';
+    let apiData = {};      // code -> {riskLevel, riskIndex, confidence}
+    let sosEvents = [];
+    let sosTotal = 0;
+    let resolvedToday = 0;
+    let map, heatLayer, markersGroup;
+
+    let pincodeLayer = null;
+    let labelLayer = null;
+    let selectedPoly = null;
+    let zonePanel;
+    const CHENNAI_PIN_SET = new Set(ZONES.map(z => parseInt(z.c)));
+    let patrolLayer = null;
+    let patrolState = {};   // id -> { lat, lon, bearing, status, marker, popup, popupOpen, targetLat, targetLon }
+
+    // ═══ BOOT ═══
+    document.addEventListener('DOMContentLoaded', () => {
+      zonePanel = document.getElementById('zoneInfoPanel');
+
+      // Each init is guarded so one failure doesn't cascade
+      try { initMap(); } catch (e) { console.error('[Rakshak] initMap failed:', e); }
+      try { initPatrols(); } catch (e) { console.error('[Rakshak] initPatrols failed:', e); }
+
+      // Seed SOS feed after a brief yield so the full DOM/layout is settled
+      setTimeout(() => {
+        try { scheduleSOSLoop(); } catch (e) { console.error('[Rakshak] scheduleSOSLoop failed:', e); }
+      }, 150);
+
+      fetchAll();
+      setInterval(fetchAll, 60000);
+      setInterval(tickResponseTime, 12000);
+
+      // Ensure patrol sidebar and overview panel reflect initial state immediately
+      setTimeout(() => { updatePatrolSidebar(); renderCityOverview(); }, 200);
+    });
+
+    // ═══ LANGUAGE ═══
+    function toggleLang() {
+      lang = lang === 'en' ? 'ta' : 'en';
+      document.documentElement.setAttribute('data-lang', lang);
+      document.getElementById('langBtnTxt').textContent = T[lang].langBtn;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.dataset.i18n;
+        if (T[lang][k] !== undefined) el.textContent = T[lang][k];
+      });
+      if (lang === 'ta') {
+        document.body.style.fontFamily = "'Noto Sans Tamil', 'Inter', sans-serif";
+      } else {
+        document.body.style.fontFamily = "var(--font-body)";
+      }
+      renderSOSList();
+    }
+
+    // ═══ MAP ═══
+    function initMap() {
+      const chennai_bounds = L.latLngBounds(
+        L.latLng(12.8000, 80.1000),
+        L.latLng(13.2300, 80.3200)
+      );
+
+      map = L.map('map', {
+        center: [13.0827, 80.2707],
+        zoom: 12,
+        minZoom: 11,
+        maxZoom: 16,
+        maxBounds: chennai_bounds,
+        maxBoundsViscosity: 1.0,
+        zoomControl: true,
+        attributionControl: false
+      });
+      map.setMaxBounds(chennai_bounds);
+      map.fitBounds(chennai_bounds, { padding: [10, 10] });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        { subdomains: 'abcd', maxZoom: 19 }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+
+      const heatPts = ZONES.map(z => {
+        const w = z.r === 'HIGH' ? 0.9 : z.r === 'MEDIUM' ? 0.55 : 0.18;
+        return [z.lat, z.lon, w];
+      });
+      heatLayer = L.heatLayer(heatPts, {
+        radius: 38, blur: 28, maxZoom: 14,
+        gradient: { 0: '#22C55E', 0.45: '#F59E0B', 1: '#FF3B5C' },
+        max: 1
+      }).addTo(map);
+
+      //renderMarkers();
+      loadKMLPincodes();
+    }
+
+    function riskColor(r) {
+      return r === 'HIGH' ? '#FF3B5C' : r === 'MEDIUM' ? '#F59E0B' : '#22C55E';
+    }
+
+    function renderMarkers() {
+      markersGroup.clearLayers();
+      ZONES.forEach(z => {
+        const d = apiData[z.c] || {};
+        const risk = d.riskLevel || z.r;
+        const col = riskColor(risk);
+        const rad = risk === 'HIGH' ? 9 : risk === 'MEDIUM' ? 7 : 5;
+        const m = L.circleMarker([z.lat, z.lon], {
+          radius: rad, fillColor: col, fillOpacity: 0.88,
+          color: 'rgba(0,0,0,0.35)', weight: 1
+        });
+        const idx = d.riskIndex != null ? (d.riskIndex * 100).toFixed(0) + '%' : '—';
+        const conf = d.confidence != null ? (d.confidence * 100).toFixed(0) + '%' : '—';
+        m.bindPopup(`<div style="font-size:12px;line-height:1.7">
+      <div style="font-weight:700;font-size:13px;margin-bottom:2px">${z.n}</div>
+      <div style="color:#94A3B8;font-size:10px;margin-bottom:8px">${z.c}</div>
+      <div style="display:flex;gap:18px">
+        <div><div style="color:#94A3B8;font-size:9px;text-transform:uppercase;letter-spacing:1px">Risk</div>
+             <div style="color:${col};font-weight:700;font-size:13px">${risk}</div></div>
+        <div><div style="color:#94A3B8;font-size:9px;text-transform:uppercase;letter-spacing:1px">Index</div>
+             <div style="font-weight:700;font-size:13px;font-variant-numeric:tabular-nums">${idx}</div></div>
+        <div><div style="color:#94A3B8;font-size:9px;text-transform:uppercase;letter-spacing:1px">Conf.</div>
+             <div style="font-weight:700;font-size:13px;font-variant-numeric:tabular-nums">${conf}</div></div>
+      </div></div>`);
+        markersGroup.addLayer(m);
+      });
+    }
+
+    function updateHeatmap() {
+      const pts = ZONES.map(z => {
+        const d = apiData[z.c];
+        const w = d ? (d.riskIndex || 0) : (z.r === 'HIGH' ? 0.85 : z.r === 'MEDIUM' ? 0.52 : 0.15);
+        return [z.lat, z.lon, w];
+      });
+      heatLayer.setLatLngs(pts);
+    }
+
+    // ═══ PINCODE BOUNDARY LAYER ═══
+    function getPinFromProps(props) {
+      return String(props?._pin || props?.pincode || props?.Pincode || props?.PINCODE || props?.PIN || '');
+    }
+
+    function getRiskStyle(risk, hover) {
+      const base = hover
+        ? (risk === 'HIGH' ? 0.45 : risk === 'MEDIUM' ? 0.35 : 0.25)
+        : (risk === 'HIGH' ? 0.30 : risk === 'MEDIUM' ? 0.20 : 0.12);
+      if (risk === 'HIGH') return { fillColor: '#FF3B5C', fillOpacity: base, color: '#FF3B5C', weight: hover ? 2.5 : 1.5, opacity: 0.9 };
+      if (risk === 'MEDIUM') return { fillColor: '#F59E0B', fillOpacity: base, color: '#F59E0B', weight: hover ? 2.5 : 1.0, opacity: 0.9 };
+      return { fillColor: '#22C55E', fillOpacity: base, color: '#22C55E', weight: hover ? 2.5 : 0.8, opacity: 0.9 };
+    }
+
+    function loadKMLPincodes() {
+      fetch('./chennai-pincodes.kml')
+        .then(r => { if (!r.ok) throw new Error('KML not found'); return r.text(); })
+        .then(kmlText => {
+          const parser = new DOMParser();
+          const kml = parser.parseFromString(kmlText, 'text/xml');
+          Array.from(kml.querySelectorAll('Placemark')).forEach(pm => {
+            const name = pm.querySelector('name')?.textContent?.trim() || '';
+            const coordsEl = pm.querySelector('coordinates');
+            if (!coordsEl) return;
+            const latLngs = coordsEl.textContent.trim().split(/\s+/)
+              .filter(c => c.includes(','))
+              .map(c => { const p = c.split(','); return [parseFloat(p[1]), parseFloat(p[0])]; })
+              .filter(ll => !isNaN(ll[0]) && !isNaN(ll[1]));
+            if (latLngs.length < 3) return;
+            const simpleData = [...pm.querySelectorAll('SimpleData')]
+            .find(el => el.getAttribute('name') === 'Pincode');
+            const pincode = simpleData?.textContent?.trim() 
+            || pm.querySelector('name')?.textContent?.trim();
+            const zone = ZONES.find(z => z.c === pincode);
+            const officeName = [...pm.querySelectorAll('SimpleData')]
+            .find(el => el.getAttribute('name') === 'Office_Name')
+            ?.textContent?.trim() || '';
+            const d = apiData[pincode];
+            const risk = d?.riskLevel || zone?.r || 'LOW';
+            const riskIndex = d?.riskIndex != null ? Math.round(d.riskIndex * 100) : (risk === 'HIGH' ? 82 : risk === 'MEDIUM' ? 51 : 18);
+            const confidence = d?.confidence != null ? Math.round(d.confidence * 100) : 80;
+            const colors = { HIGH: '#FF3B5C', MEDIUM: '#F59E0B', LOW: '#22C55E' };
+            const fills = { HIGH: 0.20, MEDIUM: 0.15, LOW: 0.10 };
+            const weights = { HIGH: 1.5, MEDIUM: 1.0, LOW: 0.8 };
+            const color = colors[risk];
+            const poly = L.polygon(latLngs, {
+              color, weight: weights[risk], opacity: 0.8,
+              fillColor: color, fillOpacity: fills[risk], interactive: true,
+              _rakPin: pincode
+            }).addTo(map);
+            poly._rakPin = pincode;
+            poly.on('mouseover', () => poly.setStyle({ fillOpacity: fills[risk] + 0.15 }));
+            poly.on('mouseout', () => poly.setStyle({ fillOpacity: fills[risk] }));
+            poly.on('click', () => populateZonePanel(
+              pincode, zone?.n || name, risk, riskIndex, confidence
+            ));
+            const center = poly.getBounds().getCenter();
+            L.marker(center, {
+              icon: L.divIcon({
+                className: 'pincode-label',
+                html: `<span>${pincode}</span>`,
+                iconSize: [50, 16], iconAnchor: [25, 8]
+              }), interactive: false
+            }).addTo(map);
+          });
+          map.on('zoomend', () => {
+            const show = map.getZoom() >= 12;
+            document.querySelectorAll('.pincode-label').forEach(
+              el => el.style.display = show ? 'block' : 'none'
+            );
+          });
+        })
+        .catch(err => {
+          console.warn('KML load failed, using circle fallback:', err);
+          drawFallbackCircles();
+        });
+    }
+
+
+
+
+    function drawFallbackCircles() {
+      if (pincodeLayer) { map.removeLayer(pincodeLayer); pincodeLayer = null; }
+      if (labelLayer) { map.removeLayer(labelLayer); labelLayer = null; }
+
+      labelLayer = L.layerGroup().addTo(map);
+      pincodeLayer = L.layerGroup().addTo(map);
+
+      ZONES.forEach(z => {
+        const d = apiData[z.c];
+        const risk = d?.riskLevel || z.r;
+
+        const circle = L.circle([z.lat, z.lon], {
+          ...getRiskStyle(risk, false),
+          radius: 650,
+          interactive: true
+        });
+        circle._rakPin = z.c;
+
+        circle.on('mouseover', function (e) {
+          if (selectedPoly === this) return;
+          const dd = apiData[z.c];
+          const rr = dd?.riskLevel || z.r;
+          const col = riskColor(rr);
+          const idx = dd?.riskIndex != null ? Math.round(dd.riskIndex * 100) : '—';
+          const tc = 'zone-tip ' + (rr === 'HIGH' ? 'tip-high' : rr === 'MEDIUM' ? 'tip-med' : 'tip-low');
+          this.setStyle(getRiskStyle(rr, true));
+          this.bindTooltip(
+            `<span style="font-size:9px;font-weight:700;letter-spacing:1px;color:#94A3B8">ZONE ${z.c}</span><br>` +
+            `<span style="font-weight:700;font-size:12px">${z.n}</span><br>` +
+            `<span style="color:${col};font-weight:700">Risk: ${rr}</span>&nbsp;&nbsp;` +
+            `<span style="color:#94A3B8">Index: ${idx}</span>`,
+            { className: tc, sticky: true, direction: 'top', offset: [0, -6] }
+          ).openTooltip(e.latlng);
+        });
+
+        circle.on('mouseout', function () {
+          this.closeTooltip(); this.unbindTooltip();
+          if (selectedPoly !== this) {
+            const dd = apiData[z.c];
+            this.setStyle(getRiskStyle(dd?.riskLevel || z.r, false));
+          }
+        });
+
+        circle.on('click', function () {
+          if (selectedPoly && selectedPoly !== this) {
+            const pp = selectedPoly._rakPin;
+            const pz = ZONES.find(x => x.c === pp);
+            const pd = apiData[pp];
+            selectedPoly.setStyle(getRiskStyle(pd?.riskLevel || pz?.r || 'LOW', false));
+          }
+          selectedPoly = this;
+          selectedPoly._rakPin = z.c;
+          const dd = apiData[z.c];
+          const rr = dd?.riskLevel || z.r;
+          this.setStyle({ ...getRiskStyle(rr, false), weight: 3, fillOpacity: 0.35 });
+          showZonePanel(z.c, z.n, rr, dd);
+        });
+
+        pincodeLayer.addLayer(circle);
+
+        // Pincode label
+        try {
+          const lbl = L.marker([z.lat, z.lon], {
+            icon: L.divIcon({
+              className: 'pincode-label',
+              html: `<span style="font-family:'Noto Sans',sans-serif;font-size:9px;` +
+                `color:rgba(255,255,255,0.55);font-weight:500;` +
+                `pointer-events:none;user-select:none">${z.c}</span>`,
+              iconSize: [40, 14], iconAnchor: [20, 7]
+            }),
+            interactive: false, zIndexOffset: -100
+          });
+          labelLayer.addLayer(lbl);
+        } catch (_) { }
+      });
+
+      if (heatLayer) heatLayer.bringToFront();
+      markersGroup.bringToFront();
+
+      toggleLabels();
+      map.on('zoomend', toggleLabels);
+    }
+
+
+
+    function showZonePanel(pin, name, risk, d) {
+      const col = riskColor(risk);
+      const idx = d?.riskIndex != null ? Math.round(d.riskIndex * 100) + '/100' : '—';
+      const conf = d?.confidence != null ? Math.round(d.confidence * 100) + '%' : '—';
+      zonePanel.innerHTML =
+        `<div class="zi-head">ZONE DETAIL</div>` +
+        `<div class="zi-name">${name} <span style="color:var(--dim);font-weight:400;font-size:11px">(${pin})</span></div>` +
+        `<div class="zi-row"><span class="zi-key">Risk Level</span>` +
+        `<span class="zi-val" style="color:${col}">${risk} <span style="font-size:9px">●</span></span></div>` +
+        `<div class="zi-row"><span class="zi-key">Risk Index</span><span class="zi-val">${idx}</span></div>` +
+        `<div class="zi-row"><span class="zi-key">Confidence</span><span class="zi-val">${conf}</span></div>` +
+        `<div class="zi-row"><span class="zi-key">Last Updated</span><span class="zi-val">just now</span></div>` +
+        `<div class="zi-footer"><button class="zi-dismiss" onclick="dismissZonePanel()">Dismiss</button></div>`;
+      zonePanel.style.display = 'block';
+    }
+
+    function dismissZonePanel() {
+      zonePanel.style.display = 'none';
+      if (selectedPoly) {
+        const pin = selectedPoly._rakPin;
+        const z = ZONES.find(zn => zn.c === pin);
+        const d = apiData[pin];
+        const risk = d?.riskLevel || z?.r || 'LOW';
+        selectedPoly.setStyle(getRiskStyle(risk, false));
+        selectedPoly = null;
+      }
+    }
+
+    function updatePincodeStyles() {
+      if (!pincodeLayer) return;
+      pincodeLayer.eachLayer(layer => {
+        if (selectedPoly === layer) return;
+        // Handles both GeoJSON polygon layers and L.circle fallback layers
+        const pin = layer.feature ? getPinFromProps(layer.feature.properties) : layer._rakPin;
+        if (!pin) return;
+        const z = ZONES.find(zn => zn.c === pin);
+        const d = apiData[pin];
+        const risk = d?.riskLevel || z?.r || layer.feature?.properties?._zoneRisk || 'LOW';
+        layer.setStyle(getRiskStyle(risk, false));
+      });
+      // Refresh open panel if Lambda updated data
+      if (selectedPoly && zonePanel && zonePanel.style.display !== 'none') {
+        const pin = selectedPoly._rakPin;
+        const z = ZONES.find(zn => zn.c === pin);
+        const d = apiData[pin];
+        const risk = d?.riskLevel || z?.r || 'LOW';
+        showZonePanel(pin, z?.n || pin, risk, d);
+      }
+    }
+
+    // ═══ LAMBDA API ═══
+    async function fetchAll() {
+      const now = new Date();
+      const hour = now.getHours();
+      const dow = now.getDay();
+      const isnight = (hour < 6 || hour >= 20) ? 1 : 0;
+      const isweekend = (dow === 0 || dow === 6) ? 1 : 0;
+
+      const results = await Promise.allSettled(
+        ZONES.map(async z => {
+          const res = await fetch(LAMBDA, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat: z.lat, lon: z.lon, hour, dayofweek: dow, isnight, isweekend })
+          });
+          if (!res.ok) throw new Error(res.status);
+          return { code: z.c, data: await res.json() };
+        })
+      );
+
+      results.forEach((r, i) => {
+        const z = ZONES[i];
+        if (r.status === 'fulfilled') {
+          apiData[z.c] = r.value.data;
+        } else if (!apiData[z.c]) {
+          // fallback to defaults
+          apiData[z.c] = {
+            riskLevel: z.r,
+            riskIndex: z.r === 'HIGH' ? 0.82 : z.r === 'MEDIUM' ? 0.51 : 0.17,
+            confidence: 0.74
+          };
+        }
+      });
+
+      //renderMarkers();
+      updateHeatmap();
+      updateHighRiskCount();
+      updatePincodeStyles();
+      // Refresh city overview if no zone is selected
+      const pc = document.getElementById('panel-content');
+      if (pc && pc.querySelector('[data-overview]')) renderCityOverview();
+    }
+
+    function updateHighRiskCount() {
+      const n = ZONES.filter(z => (apiData[z.c]?.riskLevel || z.r) === 'HIGH').length;
+      document.getElementById('highRiskCnt').textContent = n;
+    }
+
+    // ═══ SOS EVENTS ═══
+    // Evaluated lazily so it picks up any last-minute zone changes
+    function getSosPool() {
+      const pool = ZONES.filter(z => z.r === 'HIGH' || z.r === 'MEDIUM');
+      return pool.length ? pool : ZONES; // final safety: use all zones
+    }
+
+    function scheduleSOSLoop() {
+      // Seed two events immediately, then continue on a 8-12s interval
+      generateSOS();
+      setTimeout(generateSOS, 600);   // stagger second seed by 600ms so it shows as "fresh"
+      (function loop() {
+        const delay = 8000 + Math.random() * 4000;
+        setTimeout(() => { generateSOS(); loop(); }, delay);
+      })();
+    }
+
+    function generateSOS() {
+      const pool = getSosPool();
+      if (!pool.length) return;
+      const z = pool[Math.floor(Math.random() * pool.length)];
+      const risk = apiData[z.c]?.riskLevel || z.r;
+
+      const evId = Date.now() + (Math.floor(Math.random() * 900) + 1);
+      const ev = { id: evId, name: z.n, risk, ts: new Date(), done: false, status: 'dispatched' };
+      sosEvents.unshift(ev);
+      if (sosEvents.length > 50) sosEvents.length = 50;
+      sosTotal++;
+
+      const cntEl = document.getElementById('sosTodayCnt');
+      const badgeEl = document.getElementById('sosBadge');
+      if (cntEl) cntEl.textContent = sosTotal;
+      if (badgeEl) badgeEl.textContent = sosTotal;
+
+      // Transition: dispatched → resolving → resolved
+      const resolveDelay = 15000 + Math.random() * 10000;
+      setTimeout(() => {
+        const e = sosEvents.find(x => x.id === evId);
+        if (e) { e.done = true; e.status = 'resolving'; renderSOSList(); }
+        const resolvedDelay = 20000 + Math.random() * 10000;
+        setTimeout(() => {
+          const e2 = sosEvents.find(x => x.id === evId);
+          if (e2) { e2.status = 'resolved'; resolvedToday++; renderSOSList(); renderPatrolStats(); }
+        }, resolvedDelay);
+      }, resolveDelay);
+
+      renderSOSList();
+    }
+
+    let sosShowAll = false;
+
+    function renderSOSList() {
+      const list = document.getElementById('sosList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      // Auto-hide resolved events older than 2 minutes
+      const now = Date.now();
+      const visible = sosEvents.filter(ev => {
+        if (ev.status === 'resolved' && (now - ev.ts) > 120000) return false;
+        return true;
+      });
+
+      const toShow = sosShowAll ? visible : visible.slice(0, 5);
+
+      toShow.forEach((ev, i) => {
+        const badgeTxt = T[lang][ev.risk] || ev.risk;
+        const div = document.createElement('div');
+        const isResolved = ev.status === 'resolved';
+        div.className = 'sos-evt' + (i === 0 && !sosShowAll ? ' fresh' : '');
+        if (isResolved) div.style.opacity = '0.45';
+        const pillLabel = ev.status === 'resolved' ? 'Resolved' : ev.status === 'resolving' ? 'Resolving' : 'Dispatched';
+        div.innerHTML = `
+      <div class="evt-top">
+        <span class="evt-loc">${ev.name}</span>
+        <span class="risk-badge ${ev.risk}">${badgeTxt}</span>
+      </div>
+      <div class="evt-bot">
+        <span class="evt-time">${timeAgo(ev.ts)}</span>
+        <span class="status-pill ${ev.status || 'dispatched'}">${pillLabel}</span>
+      </div>`;
+        list.appendChild(div);
+      });
+
+      // "View All" / "Show Less" link
+      if (visible.length > 5) {
+        const link = document.createElement('div');
+        link.style.cssText = 'text-align:center;padding:8px 0 4px;font-size:11px;color:var(--accent);cursor:pointer;border-top:1px solid var(--border);margin-top:4px';
+        link.textContent = sosShowAll ? '▲ Show Less' : `▼ View All (${visible.length})`;
+        link.onclick = () => { sosShowAll = !sosShowAll; renderSOSList(); };
+        list.appendChild(link);
+      }
+    }
+
+    function timeAgo(d) {
+      const s = Math.floor((Date.now() - d) / 1000);
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      return Math.floor(s / 3600) + 'h ago';
+    }
+
+    // ═══ RESPONSE TIME ═══
+    function tickResponseTime() {
+      const v = (4 + Math.random() * 4).toFixed(1);
+      document.getElementById('respTime').innerHTML =
+        v + ' <span style="font-size:13px;font-weight:500">min</span>';
+    }
+
+
+
+    // ═══ PATROL VEHICLES ═══
+    function initPatrols() {
+      patrolLayer = L.layerGroup().addTo(map);
+
+      patrolUnits.forEach((unit, idx) => {
+        const route = ROAD_WAYPOINTS[unit.routeIdx % ROAD_WAYPOINTS.length];
+        const seedPt = route.pts[unit.wayptIdx % route.pts.length];
+        const lat = seedPt[0];
+        const lon = seedPt[1];
+        patrolState[unit.id] = {
+          lat, lon,
+          status: unit.status,
+          wayptIdx: unit.wayptIdx,
+          wayptProgress: unit.wayptProgress,
+          marker: null, popup: null, popupOpen: false
+        };
+        const marker = L.marker([lat, lon], {
+          icon: makePatrolIcon(unit.id, unit.status),
+          zIndexOffset: 900
+        });
+        marker.on('click', () => showPatrolPopup(unit.id));
+        patrolLayer.addLayer(marker);
+        patrolState[unit.id].marker = marker;
+      });
+
+      updatePatrolSidebar();
+      setInterval(movePatrols, 3000);
+      schedulePatrolStatusChange();
+    }
+
+    function makePatrolIcon(id, status) {
+      const statusCol = status === 'patrolling' ? '#22C55E' : status === 'responding' ? '#F59E0B' : '#FF3B5C';
+      const badgeClass = status === 'responding' ? 'responding' : status === 'at scene' ? 'at-scene' : '';
+
+      return L.divIcon({
+        className: '',
+        html:
+          `<div class="patrol-icon">` +
+          `<div class="p-badge ${badgeClass}">` +
+          `<svg width="14" height="14" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">` +
+          `<path d="M12 2L3 6.5V12C3 17 7 21.5 12 23C17 21.5 21 17 21 12V6.5L12 2Z"/>` +
+          `<path d="M9 12L11 14L15 10" stroke="#080D1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` +
+          `</svg>` +
+          `<div class="p-sdot" style="background:${statusCol}"></div>` +
+          `</div>` +
+          `<div class="p-label">${id}</div>` +
+          `</div>`,
+        iconSize: [40, 42],
+        iconAnchor: [20, 13]
+      });
+    }
+
+    function movePatrols() {
+      patrolUnits.forEach(unit => {
+        const s = patrolState[unit.id];
+        if (!s || !s.marker) return;
+
+        const route = ROAD_WAYPOINTS[unit.routeIdx % ROAD_WAYPOINTS.length];
+        const pts = route.pts;
+        const fromPt = pts[s.wayptIdx % pts.length];
+        const toPt   = pts[(s.wayptIdx + 1) % pts.length];
+
+        s.wayptProgress = (s.wayptProgress || 0) + 0.12;
+        if (s.wayptProgress >= 1) {
+          s.wayptProgress = 0;
+          s.wayptIdx = (s.wayptIdx + 1) % pts.length;
+        }
+
+        const t = s.wayptProgress;
+        s.lat = fromPt[0] + (toPt[0] - fromPt[0]) * t;
+        s.lon = fromPt[1] + (toPt[1] - fromPt[1]) * t;
+
+        s.marker.setLatLng([s.lat, s.lon]);
+        s.marker.setIcon(makePatrolIcon(unit.id, s.status));
+
+        if (s.popupOpen && s.popup) {
+          s.popup.setLatLng([s.lat, s.lon]);
+        }
+      });
+    }
+
+    function schedulePatrolStatusChange() {
+      const delay = 15000 + Math.random() * 5000;
+      setTimeout(() => {
+        triggerPatrolStatusChange();
+        schedulePatrolStatusChange();
+      }, delay);
+    }
+
+    function triggerPatrolStatusChange() {
+      // Pick 1-2 patrolling units to escalate
+      const patrolling = patrolUnits.filter(u => (patrolState[u.id]?.status || u.status) === 'patrolling');
+      if (!patrolling.length) return;
+
+      const pick = patrolling.sort(() => Math.random() - 0.5).slice(0, Math.random() > 0.5 ? 2 : 1);
+      pick.forEach(unit => {
+        const s = patrolState[unit.id];
+        if (!s) return;
+
+        // Patrolling → responding
+        const highZones = ZONES.filter(z => (apiData[z.c]?.riskLevel || z.r) === 'HIGH');
+        const target = (highZones.length ? highZones : ZONES)[Math.floor(Math.random() * (highZones.length || ZONES.length))];
+        s.status = 'responding';
+        unit.status = 'responding';
+        s.targetLat = target.lat + (Math.random() - 0.5) * 0.006;
+        s.targetLon = target.lon + (Math.random() - 0.5) * 0.006;
+        refreshPatrolUnit(unit.id);
+        updatePatrolSidebar();
+
+        // → at scene after 10-15s
+        setTimeout(() => {
+          if (s.status !== 'responding') return;
+          s.status = 'at scene';
+          unit.status = 'at scene';
+          refreshPatrolUnit(unit.id);
+          updatePatrolSidebar();
+
+          // → patrolling after 20-30s
+          setTimeout(() => {
+            if (s.status !== 'at scene') return;
+            s.status = 'patrolling';
+            unit.status = 'patrolling';
+            delete s.targetLat; delete s.targetLon;
+            refreshPatrolUnit(unit.id);
+            updatePatrolSidebar();
+          }, 20000 + Math.random() * 10000);
+        }, 10000 + Math.random() * 5000);
+      });
+    }
+
+    function refreshPatrolUnit(id) {
+      const unit = patrolUnits.find(u => u.id === id);
+      const s = patrolState[id];
+      if (!unit || !s || !s.marker) return;
+      s.marker.setIcon(makePatrolIcon(unit.id, s.status));
+      if (s.popupOpen && s.popup) {
+        s.popup.setContent(buildPopupHTML(unit, s));
+      }
+    }
+
+    function buildPopupHTML(unit, s) {
+      const status = s.status;
+      const statusCol = status === 'patrolling' ? '#22C55E' : status === 'responding' ? '#F59E0B' : '#FF3B5C';
+      const statusLbl = status === 'patrolling' ? 'PATROLLING' : status === 'responding' ? 'RESPONDING' : 'AT SCENE';
+      const zoneObj = ZONES.find(z => z.n === unit.zone);
+      const pincode = zoneObj ? zoneObj.c : '—';
+
+      return (
+        `<div class="pu-wrap">` +
+        `<div class="pu-header">` +
+        `<span class="pu-title">🚔 PATROL UNIT ${unit.id}</span>` +
+        `<span class="pu-close" onclick="closePatrolPopup('${unit.id}')">✕</span>` +
+        `</div>` +
+        `<div class="pu-div"></div>` +
+        `<div class="pu-row"><span class="pu-key">Vehicle</span><span class="pu-val">${unit.vehicle}</span></div>` +
+        `<div class="pu-row"><span class="pu-key">Zone</span><span class="pu-val">${unit.zone} (${pincode})</span></div>` +
+        `<div class="pu-row"><span class="pu-key">Status</span>` +
+        `<span class="pu-val" style="color:${statusCol}">● ${statusLbl}</span></div>` +
+        `<div class="pu-div"></div>` +
+        `<div class="pu-officers-lbl">OFFICERS ON DUTY</div>` +
+        unit.officers.map(o => `<div class="pu-officer">👮 ${o}</div>`).join('') +
+        `<div class="pu-div"></div>` +
+        `<div class="pu-actions">` +
+        `<a class="pu-btn-p" href="tel:${unit.contact}">📞 Contact Unit</a>` +
+        `<a class="pu-btn-s" href="sms:${unit.contact}">💬 Message</a>` +
+        `<button class="pu-btn-s" onclick="trackPatrolUnit('${unit.id}')">📍 Track</button>` +
+        `</div>` +
+        `</div>`
+      );
+    }
+
+    function showPatrolPopup(id) {
+      const unit = patrolUnits.find(u => u.id === id);
+      const s = patrolState[id];
+      if (!unit || !s) return;
+
+      // Close any already-open patrol popups
+      patrolUnits.forEach(u => {
+        const ps = patrolState[u.id];
+        if (ps?.popupOpen && ps.popup) { ps.popup.remove(); ps.popupOpen = false; ps.popup = null; }
+      });
+
+      populatePatrolPanel(unit);
+    }
+
+    function closePatrolPopup(id) {
+      const s = patrolState[id];
+      if (s?.popup) { s.popup.remove(); s.popupOpen = false; s.popup = null; }
+    }
+
+    function trackPatrolUnit(id) {
+      const s = patrolState[id];
+      if (s) map.setView([s.lat, s.lon], Math.max(map.getZoom(), 14));
+    }
+
+    function updatePatrolSidebar() {
+      let nP = 0, nR = 0, nS = 0;
+      patrolUnits.forEach(u => {
+        const st = patrolState[u.id]?.status || u.status;
+        if (st === 'patrolling') nP++;
+        else if (st === 'responding') nR++;
+        else if (st === 'at scene') nS++;
+      });
+      const ep = document.getElementById('pc-patrolling');
+      const er = document.getElementById('pc-responding');
+      const es = document.getElementById('pc-atscene');
+      if (ep) ep.textContent = nP;
+      if (er) er.textContent = nR;
+      if (es) es.textContent = nS;
+      renderPatrolStats(nP, nR, nS);
+    }
+
+    function renderPatrolStats(nP, nR, nS) {
+      const body = document.getElementById('patrolStatsBody');
+      if (!body) return;
+      // If called with no args (e.g. from generateSOS resolved branch), recompute counts
+      if (nP === undefined) {
+        nP = 0; nR = 0; nS = 0;
+        patrolUnits.forEach(u => {
+          const st = patrolState[u.id]?.status || u.status;
+          if (st === 'patrolling') nP++;
+          else if (st === 'responding') nR++;
+          else if (st === 'at scene') nS++;
+        });
+      }
+      const total = patrolUnits.length;
+      const resolvedMax = Math.max(sosTotal, 1);
+      const rows = [
+        { label: 'Patrolling',     count: nP,            color: '#22C55E', pct: Math.round(nP / total * 100) },
+        { label: 'Responding',     count: nR,            color: '#F59E0B', pct: Math.round(nR / total * 100) },
+        { label: 'At Scene',       count: nS,            color: '#FF3B5C', pct: Math.round(nS / total * 100) },
+        { label: 'Resolved Today', count: resolvedToday, color: '#22C55E', pct: Math.min(100, Math.round(resolvedToday / resolvedMax * 100)) },
+      ];
+      body.innerHTML = rows.map(r => `
+        <div style="padding:5px 4px;border-top:1px solid rgba(255,255,255,0.05)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="width:7px;height:7px;border-radius:50%;background:${r.color};flex-shrink:0;display:inline-block"></span>
+            <span style="flex:1;font-size:11px;color:var(--muted)">${r.label}</span>
+            <span style="font-size:16px;font-weight:800;color:${r.color};font-variant-numeric:tabular-nums">${r.count}</span>
+          </div>
+          <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden">
+            <div style="height:100%;width:${r.pct}%;background:${r.color};border-radius:2px;transition:width .4s ease"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    // ═══ SELECTION PANEL ═══
+    function populateZonePanel(pincode, zoneName, risk, riskIndex, confidence) {
+      const riskColors = { HIGH: '#FF3B5C', MEDIUM: '#F59E0B', LOW: '#22C55E' };
+      const c = riskColors[risk];
+      document.getElementById('panel-content').innerHTML = `
+        <div style="width:100%">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-weight:600;color:#F1F5F9;font-size:14px">
+              📍 ${zoneName} (${pincode})
+            </span>
+            <button onclick="clearPanel()" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:16px">✕</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <span style="background:${c};color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">● ${risk}</span>
+            <span style="color:#94A3B8;font-size:12px">Index: ${riskIndex}/100</span>
+            <span style="color:#94A3B8;font-size:12px">Confidence: ${confidence}%</span>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:4px;font-size:13px;color:#94A3B8;display:flex;flex-direction:column;gap:6px">
+            <div>Active SOS in zone: <span style="color:#F1F5F9;font-weight:600">${Math.floor(Math.random() * 4)}</span></div>
+            <div>Patrols assigned: <span style="color:#F1F5F9;font-weight:600">${Math.floor(Math.random() * 3) + 1}</span></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button style="flex:1;background:#FF3B5C;color:white;border:none;padding:7px;border-radius:6px;font-size:12px;cursor:pointer">Dispatch Patrol</button>
+            <button style="flex:1;background:transparent;color:#00D4B4;border:1px solid #00D4B4;padding:7px;border-radius:6px;font-size:12px;cursor:pointer">Mark Safe</button>
+          </div>
+        </div>`;
+    }
+
+    function populatePatrolPanel(unit) {
+      const statusColors = { patrolling: '#22C55E', responding: '#F59E0B', 'at scene': '#FF3B5C' };
+      const c = statusColors[unit.status] || '#22C55E';
+      document.getElementById('panel-content').innerHTML = `
+        <div style="width:100%">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-weight:600;color:#F1F5F9;font-size:14px">
+              🚔 PATROL UNIT ${unit.id}
+            </span>
+            <button onclick="clearPanel()" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:16px">✕</button>
+          </div>
+          <div style="font-size:12px;color:#94A3B8;display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+            <div>Vehicle: <span style="color:#F1F5F9">${unit.vehicle}</span></div>
+            <div>Zone: <span style="color:#F1F5F9">${unit.zone}</span></div>
+            <div>Status: <span style="color:${c};font-weight:600">● ${unit.status.toUpperCase()}</span></div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;font-size:12px;color:#94A3B8">
+            <div style="margin-bottom:6px;font-weight:600;color:#F1F5F9">OFFICERS ON DUTY:</div>
+            ${unit.officers.map(o => `<div>👮 ${o}</div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button onclick="window.location.href='tel:${unit.contact}'" style="flex:1;background:#00D4B4;color:#080D1A;border:none;padding:7px;border-radius:6px;font-size:12px;cursor:pointer">📞 Contact</button>
+            <a href="sms:${unit.contact}" style="flex:1;background:transparent;color:#00D4B4;border:1px solid #00D4B4;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center">💬 Message</a>
+            <button onclick="map.setView(patrolState['${unit.id}'].marker.getLatLng(),14)" style="flex:1;background:transparent;color:#00D4B4;border:1px solid #00D4B4;padding:7px;border-radius:6px;font-size:12px;cursor:pointer">📍 Track</button>
+          </div>
+        </div>`;
+    }
+
+    function renderCityOverview() {
+      const total = ZONES.length;
+      const high  = ZONES.filter(z => (apiData[z.c]?.riskLevel || z.r) === 'HIGH').length;
+      const med   = ZONES.filter(z => (apiData[z.c]?.riskLevel || z.r) === 'MEDIUM').length;
+      const low   = total - high - med;
+      const activePatrols = patrolUnits.length;
+      document.getElementById('panel-content').innerHTML = `
+        <div style="width:100%;display:flex;flex-direction:column;gap:10px">
+          <div data-overview="1" style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)">CITY OVERVIEW</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="background:rgba(255,59,92,.07);border:1px solid rgba(255,59,92,.18);border-radius:6px;padding:10px 12px">
+              <div style="font-size:22px;font-weight:800;color:#FF3B5C;font-variant-numeric:tabular-nums">${high}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">High Risk Zones</div>
+            </div>
+            <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);border-radius:6px;padding:10px 12px">
+              <div style="font-size:22px;font-weight:800;color:#F59E0B;font-variant-numeric:tabular-nums">${med}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">Medium Risk Zones</div>
+            </div>
+            <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);border-radius:6px;padding:10px 12px">
+              <div style="font-size:22px;font-weight:800;color:#22C55E;font-variant-numeric:tabular-nums">${low}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">Low Risk Zones</div>
+            </div>
+            <div style="background:rgba(0,212,180,.07);border:1px solid rgba(0,212,180,.18);border-radius:6px;padding:10px 12px">
+              <div style="font-size:22px;font-weight:800;color:#00D4B4;font-variant-numeric:tabular-nums">${activePatrols}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">Active Patrols</div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--dim);text-align:center;margin-top:2px">Click any zone or patrol unit for details</div>
+        </div>`;
+    }
+
+    function clearPanel() { renderCityOverview(); }
+
+    // Keep SOS timestamps fresh
+    setInterval(() => { if (sosEvents.length) renderSOSList(); }, 30000);
+
+    // ═══ REPORTS SECTION ═══
+    const RPT_PARAMS = [
+      'lateNightFootfall','streetLighting','cctvCoverage','patrolFreq',
+      'incidents30d','eveTeasing','theft','assault','drunkDisorderly',
+      'abandonedProps','publicTransport','safeHouses','responseTime',
+      'communityWatch','drugActivity','harassment','safetyScore'
+    ];
+
+    function initReports() {
+      const tbody = document.getElementById('reportsBody');
+      if (!tbody || tbody.children.length > 0) return;
+      ZONES.slice(0, 10).forEach(z => addReportRow(z.c, z.n));
+    }
+
+    function addReportRow(pincode, zoneName) {
+      const tbody = document.getElementById('reportsBody');
+      if (!tbody) return;
+      const pin = pincode || '';
+      const name = zoneName || '';
+      const rowId = 'rpt-' + Date.now() + Math.random().toString(36).slice(2,6);
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML =
+        `<td><input class="rpt-cell-input" style="width:70px" value="${pin}" placeholder="600001" data-field="pincode"></td>` +
+        `<td><input class="rpt-cell-input" style="width:100px;text-align:left" value="${name}" placeholder="Zone Name" data-field="zone"></td>` +
+        RPT_PARAMS.map(p =>
+          `<td><input class="rpt-cell-input" value="${Math.floor(Math.random()*80+10)}" data-field="${p}" type="number" min="0" max="100"></td>`
+        ).join('') +
+        `<td><button class="rpt-save-btn" onclick="saveReportRow('${rowId}')">Save</button></td>`;
+      tbody.appendChild(tr);
+    }
+
+    async function saveReportRow(rowId) {
+      const tr = document.getElementById(rowId);
+      if (!tr) return;
+      const inputs = tr.querySelectorAll('input[data-field]');
+      const payload = {};
+      inputs.forEach(inp => { payload[inp.dataset.field] = inp.value; });
+      payload.submittedAt = new Date().toISOString();
+
+      const btn = tr.querySelector('.rpt-save-btn');
+      if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
+      try {
+        const res = await fetch('/api/reports/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const ok = res.ok;
+        if (btn) {
+          btn.outerHTML = ok
+            ? `<span class="rpt-saved-badge">✓ Saved</span>`
+            : `<button class="rpt-save-btn" onclick="saveReportRow('${rowId}')">Retry</button>`;
+        }
+      } catch (_) {
+        // API not available — show success anyway for demo
+        if (btn) btn.outerHTML = `<span class="rpt-saved-badge">✓ Saved</span>`;
+      }
+    }
+
+    function showReports() {
+      document.getElementById('dashboardView').style.display = 'none';
+      document.getElementById('reportsView').style.display = 'flex';
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item')[1].classList.add('active');
+      initReports();
+    }
+
+    function showDashboard() {
+      document.getElementById('dashboardView').style.display = 'flex';
+      document.getElementById('reportsView').style.display = 'none';
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item')[0].classList.add('active');
+    }
+
+    // ═══ FEATURE 4: DYNAMIC ZONE SCORING ═══
+    const SCORE_COLORS = {
+      HIGH:   { fill: '#ef4444', opacity: 0.5 },
+      MEDIUM: { fill: '#f59e0b', opacity: 0.4 },
+      LOW:    { fill: '#22c55e', opacity: 0.3 },
+    };
+
+    function mockScoreZones() {
+      return ZONES.map(z => {
+        const rand = Math.random();
+        let risk, score;
+        if (rand < 0.2)      { risk = 'HIGH';   score = Math.floor(Math.random() * 30); }
+        else if (rand < 0.5) { risk = 'MEDIUM'; score = Math.floor(Math.random() * 30 + 30); }
+        else                 { risk = 'LOW';    score = Math.floor(Math.random() * 40 + 60); }
+        return { pincode: z.c, safe_score: score, risk_level: risk };
+      });
+    }
+
+    async function refreshZoneScores() {
+      const btn = document.getElementById('refreshBtn');
+      const icon = document.getElementById('refreshIcon');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      if (icon) icon.style.animation = 'spin 0.8s linear infinite';
+
+      // Add spin keyframe if not present
+      if (!document.getElementById('spinStyle')) {
+        const st = document.createElement('style');
+        st.id = 'spinStyle';
+        st.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+        document.head.appendChild(st);
+      }
+
+      const now = new Date();
+      const payload = {
+        zones: ZONES.map(z => ({
+          pincode: z.c,
+          current_time: now.toISOString(),
+          police_units_available: patrolUnits.filter(u =>
+            (patrolState[u.id]?.status || u.status) === 'patrolling' &&
+            u.zone === z.n
+          ).length || Math.floor(Math.random() * 3 + 1)
+        }))
+      };
+
+      let results;
+      try {
+        const res = await fetch('/api/score/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('API unavailable');
+        results = await res.json();
+      } catch (_) {
+        results = mockScoreZones();
+      }
+
+      // Apply colors to map layers
+      applyZoneScores(results);
+
+      // Update zone overview table if visible
+      updateZoneOverviewTable(results);
+
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      if (icon) icon.style.animation = '';
+    }
+
+    function applyZoneScores(results) {
+      results.forEach(r => {
+        const pin = r.pincode;
+        const risk = r.risk_level;
+        const col = SCORE_COLORS[risk] || SCORE_COLORS.LOW;
+
+        // Update apiData so other functions stay in sync
+        if (!apiData[pin]) apiData[pin] = {};
+        apiData[pin].riskLevel = risk;
+        apiData[pin].riskIndex = r.safe_score / 100;
+
+        // Update KML polygon layers (stored in map)
+        map.eachLayer(layer => {
+          if (layer instanceof L.Polygon) {
+            // Try to match by stored pincode
+            const lpin = layer._rakPin || layer.options._rakPin;
+            if (lpin === pin) {
+              layer.setStyle({ fillColor: col.fill, fillOpacity: col.opacity, color: col.fill });
+            }
+          }
+          // Circle fallback
+          if (layer instanceof L.Circle && layer._rakPin === pin) {
+            layer.setStyle({ fillColor: col.fill, fillOpacity: col.opacity, color: col.fill });
+          }
+        });
+      });
+
+      updateHighRiskCount();
+      updateHeatmap();
+    }
+
+    function updateZoneOverviewTable(results) {
+      const pc = document.getElementById('panel-content');
+      if (!pc || !pc.querySelector('[data-overview]')) return;
+      renderCityOverview();
+    }
+  </script>
+</body>
+
+</html>

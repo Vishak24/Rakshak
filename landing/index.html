@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rakshak — AI-Powered Safety Intelligence for Chennai</title>
+<meta name="description" content="Real-time ML risk prediction across 44 zones. Live patrol dispatch. One-tap SOS. Built for Chennai Police — powered by AWS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;
+  --s1:#141414;
+  --s2:#1a1a1a;
+  --s3:#212121;
+  --border:#2a2a2a;
+  --border-bright:#3a3a3a;
+  --text:#e8e8e8;
+  --text-muted:#888;
+  --text-dim:#555;
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,0.15);
+  --red-glow:rgba(239,68,68,0.35);
+  --teal:#06b6d4;
+  --teal-dim:rgba(6,182,212,0.12);
+  --amber:#f59e0b;
+  --amber-dim:rgba(245,158,11,0.12);
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,0.12);
+  --font:'Inter',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth;scroll-padding-top:5rem}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+
+/* ── UTILITIES ── */
+.container{max-width:1200px;margin:0 auto;padding:0 1.5rem}
+.section{padding:6rem 0}
+.section-label{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text-muted);padding:.35rem .75rem;
+  border:1px solid var(--border);border-radius:4px;
+  background:var(--s1);margin-bottom:1.5rem;
+}
+.badge-red{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--red);padding:.35rem .75rem;
+  border:1px solid rgba(239,68,68,0.3);border-radius:4px;
+  background:rgba(239,68,68,0.08);
+}
+.badge-teal{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--teal);padding:.25rem .6rem;
+  border:1px solid rgba(6,182,212,0.3);border-radius:3px;
+  background:rgba(6,182,212,0.08);
+}
+.badge-amber{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--amber);padding:.25rem .6rem;
+  border:1px solid rgba(245,158,11,0.3);border-radius:3px;
+  background:rgba(245,158,11,0.08);
+}
+h2.section-heading{
+  font-size:clamp(1.8rem,3.5vw,2.75rem);
+  font-weight:800;letter-spacing:-.02em;line-height:1.15;
+  margin-bottom:1rem;
+}
+p.section-sub{font-size:1.05rem;color:var(--text-muted);max-width:48ch;line-height:1.7}
+
+/* ── SCROLL ANIMATIONS ── */
+@supports (animation-timeline: view()) {
+  .reveal{
+    animation:fade-in linear both;
+    animation-timeline:view();
+    animation-range:entry 0% entry 60%;
+  }
+}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  canvas{display:none}
+}
+
+/* ── NAV ── */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:64px;
+  display:flex;align-items:center;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  background:rgba(13,13,13,0.85);
+  border-bottom:1px solid var(--border);
+  transition:background .3s,border-color .3s;
+}
+#nav.scrolled{background:rgba(13,13,13,0.97);border-color:rgba(42,42,42,0.8)}
+.nav-inner{
+  max-width:1200px;margin:0 auto;padding:0 1.5rem;
+  width:100%;display:flex;align-items:center;gap:2rem;
+}
+.nav-logo{
+  display:flex;align-items:center;gap:.6rem;
+  font-size:.95rem;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;flex-shrink:0;
+}
+.nav-logo svg{color:var(--red)}
+.nav-logo span{color:var(--text)}
+.nav-aws-pill{
+  font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--red);padding:.2rem .5rem;
+  border:1px solid rgba(239,68,68,0.4);border-radius:3px;
+  background:rgba(239,68,68,0.08);white-space:nowrap;
+}
+.nav-links{
+  display:flex;align-items:center;gap:1.75rem;margin-left:auto;
+  list-style:none;
+}
+.nav-links a{
+  font-size:.85rem;font-weight:500;color:var(--text-muted);
+  transition:color .2s;letter-spacing:.01em;
+}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:var(--red);color:#fff;
+  font-size:.8rem;font-weight:700;letter-spacing:.03em;
+  padding:.5rem 1.1rem;border-radius:5px;
+  transition:transform .15s,box-shadow .2s;
+  white-space:nowrap;flex-shrink:0;
+}
+.nav-cta:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px var(--red-glow);
+}
+.nav-cta:active{transform:translateY(0)}
+.nav-hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);padding:.25rem}
+
+/* ── HERO ── */
+#hero{
+  position:relative;min-height:100vh;
+  display:flex;align-items:center;overflow:hidden;
+  padding-top:64px;
+}
+#hero-canvas{position:absolute;inset:0;z-index:0}
+.hero-red-glow{
+  position:absolute;top:25%;left:50%;transform:translate(-50%,-50%);
+  width:600px;height:400px;
+  background:radial-gradient(ellipse,rgba(239,68,68,0.12) 0%,transparent 70%);
+  pointer-events:none;z-index:1;
+}
+.hero-teal-glow{
+  position:absolute;bottom:10%;right:5%;
+  width:400px;height:300px;
+  background:radial-gradient(ellipse,rgba(6,182,212,0.08) 0%,transparent 70%);
+  pointer-events:none;z-index:1;
+}
+.hero-content{
+  position:relative;z-index:2;
+  width:100%;max-width:1200px;margin:0 auto;padding:0 1.5rem;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);padding:.4rem .9rem;
+  border:1px solid var(--border);border-radius:4px;
+  background:rgba(20,20,20,0.8);margin-bottom:2rem;
+}
+.eyebrow-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--red);flex-shrink:0;
+  animation:ping 2s infinite;
+}
+@keyframes ping{
+  0%,100%{box-shadow:0 0 0 0 var(--red-glow)}
+  50%{box-shadow:0 0 0 6px transparent}
+}
+.hero-h1{
+  font-size:clamp(2.8rem,6.5vw,5.2rem);
+  font-weight:900;letter-spacing:-.03em;line-height:1.05;
+  margin-bottom:1.5rem;max-width:14ch;
+}
+.hero-h1 span{color:var(--red)}
+.hero-sub{
+  font-size:clamp(1rem,1.5vw,1.15rem);
+  color:var(--text-muted);max-width:52ch;
+  line-height:1.75;margin-bottom:2.5rem;font-weight:400;
+}
+.hero-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:4rem}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--red);color:#fff;
+  font-size:.9rem;font-weight:700;letter-spacing:.02em;
+  padding:.75rem 1.6rem;border-radius:6px;
+  transition:transform .15s,box-shadow .2s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--red-glow)}
+.btn-primary:active{transform:translateY(0)}
+.btn-outline{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:transparent;color:var(--text);
+  font-size:.9rem;font-weight:600;letter-spacing:.02em;
+  padding:.75rem 1.6rem;border-radius:6px;
+  border:1px solid var(--border-bright);
+  transition:transform .15s,border-color .2s,background .2s;
+}
+.btn-outline:hover{transform:translateY(-2px);border-color:var(--text-muted);background:var(--s2)}
+.btn-outline:active{transform:translateY(0)}
+.hero-stats{
+  display:flex;align-items:center;gap:0;
+  border-top:1px solid var(--border);padding-top:2rem;
+  flex-wrap:wrap;
+}
+.hero-stat{
+  padding-right:2.5rem;margin-right:2.5rem;
+  border-right:1px solid var(--border);
+}
+.hero-stat:last-child{border-right:none;margin-right:0;padding-right:0}
+.hero-stat-num{
+  font-size:1.75rem;font-weight:800;letter-spacing:-.03em;
+  color:var(--text);display:block;
+}
+.hero-stat-label{font-size:.75rem;color:var(--text-muted);font-weight:500;letter-spacing:.03em;text-transform:uppercase}
+
+/* ── PROBLEM ── */
+#problem{background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.problem-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;
+}
+.problem-failures{display:flex;flex-direction:column;gap:1rem;margin-top:2rem}
+.failure-card{
+  display:flex;gap:1rem;align-items:flex-start;
+  padding:1.25rem;border:1px solid var(--border);border-radius:8px;
+  background:var(--s2);transition:border-color .2s,transform .15s;
+}
+.failure-card:hover{border-color:var(--border-bright);transform:translateY(-2px)}
+.failure-icon{
+  width:36px;height:36px;border-radius:6px;
+  background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--red);
+}
+.failure-title{font-size:.9rem;font-weight:700;margin-bottom:.25rem}
+.failure-desc{font-size:.82rem;color:var(--text-muted);line-height:1.5}
+.problem-stats{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.prob-stat-card{
+  padding:1.5rem;border:1px solid var(--border);border-radius:8px;
+  background:var(--s2);
+}
+.prob-stat-num{
+  font-size:2.25rem;font-weight:800;letter-spacing:-.03em;
+  color:var(--red);display:block;margin-bottom:.35rem;
+}
+.prob-stat-label{font-size:.8rem;color:var(--text-muted);line-height:1.4}
+
+/* ── HOW IT WORKS ── */
+#how{text-align:center}
+.how-heading-wrap{text-align:center;margin-bottom:4rem}
+.how-steps{
+  display:flex;align-items:flex-start;gap:0;position:relative;
+}
+.how-connector{
+  flex:1;height:2px;margin-top:2rem;
+  background:linear-gradient(90deg,var(--red),var(--teal));
+  position:relative;top:0;
+  opacity:.4;
+}
+.how-step{
+  width:280px;flex-shrink:0;padding:2rem;
+  border:1px solid var(--border);border-radius:12px;
+  background:var(--s1);text-align:left;
+  transition:border-color .2s,transform .15s;
+}
+.how-step:hover{border-color:var(--border-bright);transform:translateY(-3px)}
+.step-num{
+  font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:1rem;
+}
+.step-icon{
+  width:44px;height:44px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.25rem;font-size:1.25rem;
+}
+.step-icon-red{background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
+.step-icon-amber{background:var(--amber-dim);border:1px solid rgba(245,158,11,0.2);color:var(--amber)}
+.step-icon-teal{background:var(--teal-dim);border:1px solid rgba(6,182,212,0.2);color:var(--teal)}
+.step-title{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.step-desc{font-size:.85rem;color:var(--text-muted);line-height:1.6;margin-bottom:1rem}
+.step-tags{display:flex;gap:.4rem;flex-wrap:wrap}
+.step-tag{
+  font-size:.62rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-dim);padding:.2rem .45rem;
+  border:1px solid var(--border);border-radius:3px;
+  background:var(--s2);
+}
+
+/* ── FEATURES BENTO ── */
+#features{background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.bento-grid{
+  display:grid;
+  grid-template-columns:7fr 5fr;
+  grid-template-rows:auto auto;
+  gap:1rem;
+  margin-top:3rem;
+}
+.bento-card{
+  border:1px solid var(--border);border-radius:12px;
+  background:var(--s2);padding:1.75rem;
+  transition:border-color .2s,transform .15s;overflow:hidden;
+}
+.bento-card:hover{border-color:var(--border-bright);transform:translateY(-3px)}
+.bento-card-label{
+  font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:.75rem;
+}
+.bento-card-title{font-size:1.15rem;font-weight:700;margin-bottom:.5rem}
+.bento-card-desc{font-size:.85rem;color:var(--text-muted);line-height:1.6;max-width:40ch}
+.bento-main{grid-row:1/2;grid-column:1/2}
+.bento-ml{grid-row:1/2;grid-column:2/3}
+.bento-row2{
+  grid-row:2/3;grid-column:1/3;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;
+}
+.bento-row2 .bento-card{padding:1.5rem}
+
+/* Dashboard Mock */
+.dashboard-mock{
+  margin-top:1.5rem;
+  height:200px;border-radius:8px;overflow:hidden;
+  background:#0a0f14;border:1px solid #1e2d3a;
+  position:relative;
+}
+.mock-map-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(6,182,212,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(6,182,212,0.04) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.mock-alert{
+  position:absolute;width:10px;height:10px;border-radius:50%;
+  background:var(--red);border:2px solid rgba(239,68,68,0.5);
+}
+.mock-alert::after{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  animation:ping 2s infinite;
+  border:1px solid var(--red);opacity:.5;
+}
+.mock-patrol{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+  background:var(--teal);box-shadow:0 0 6px var(--teal);
+}
+.patrol-a{animation:patrol-move-a 8s ease-in-out infinite}
+.patrol-b{animation:patrol-move-b 10s ease-in-out infinite}
+.patrol-c{animation:patrol-move-c 12s ease-in-out infinite}
+@keyframes patrol-move-a{
+  0%,100%{transform:translate(0,0)}
+  33%{transform:translate(15px,-8px)}
+  66%{transform:translate(-8px,12px)}
+}
+@keyframes patrol-move-b{
+  0%,100%{transform:translate(0,0)}
+  50%{transform:translate(-20px,10px)}
+}
+@keyframes patrol-move-c{
+  0%,100%{transform:translate(0,0)}
+  40%{transform:translate(12px,15px)}
+  80%{transform:translate(-10px,-5px)}
+}
+.mock-label{
+  position:absolute;font-size:.55rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(0,0,0,0.7);border:1px solid var(--border);
+  padding:.15rem .35rem;border-radius:3px;white-space:nowrap;
+  pointer-events:none;
+}
+.mock-label-red{color:var(--red);border-color:rgba(239,68,68,0.3)}
+.mock-label-teal{color:var(--teal);border-color:rgba(6,182,212,0.3)}
+.mock-zone{
+  position:absolute;border-radius:4px;opacity:.15;
+}
+.mock-zone-red{background:var(--red)}
+.mock-zone-amber{background:var(--amber)}
+.mock-zone-teal{background:var(--teal)}
+.mock-status-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:.5rem .75rem;
+  background:rgba(10,15,20,0.9);
+  border-top:1px solid #1e2d3a;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:.4rem}
+.status-text{font-size:.6rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+
+/* ML Bar Chart Mock */
+.ml-bars{display:flex;align-items:flex-end;gap:6px;height:100px;margin-top:1.5rem;padding-top:.5rem}
+.ml-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:flex-end;gap:.3rem}
+.ml-bar{
+  width:100%;border-radius:3px 3px 0 0;
+  height:0;
+  animation:bar-grow-up .6s cubic-bezier(.22,.61,.36,1) both;
+  animation-play-state:paused;
+}
+.ml-bars.animated .ml-bar{animation-play-state:running}
+@keyframes bar-grow-up{from{height:0}to{height:var(--bar-h)}}
+.ml-bar-label{font-size:.55rem;color:var(--text-dim);text-align:center;white-space:nowrap;align-self:center}
+
+/* ── TECH STACK ── */
+#tech .tech-inner{
+  display:grid;grid-template-columns:1fr 2fr;gap:4rem;align-items:start;
+}
+.tech-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;
+}
+.tech-card{
+  padding:1rem;border:1px solid var(--border);border-radius:8px;
+  background:var(--s1);transition:border-color .2s,transform .15s;
+}
+.tech-card:hover{border-color:var(--border-bright);transform:translateY(-2px)}
+.tech-logo{
+  width:32px;height:32px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.55rem;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;margin-bottom:.75rem;
+}
+.tech-name{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+.tech-role{font-size:.72rem;color:var(--text-muted)}
+.arch-flows{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;
+  margin-top:2.5rem;grid-column:1/3;
+}
+.arch-flow{
+  padding:1.25rem;border:1px solid var(--border);border-radius:8px;
+  background:var(--s1);
+}
+.arch-flow-title{
+  font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:1rem;
+}
+.arch-step{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;
+}
+.arch-step:last-child{margin-bottom:0}
+.arch-arrow{color:var(--text-dim);font-size:.7rem}
+.arch-chip{
+  padding:.2rem .5rem;border-radius:3px;
+  font-size:.7rem;font-weight:600;
+  border:1px solid var(--border);background:var(--s2);
+  color:var(--text-muted);white-space:nowrap;
+}
+
+/* ── IMPACT NUMBERS ── */
+#impact{background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.impact-heading-wrap{text-align:center;margin-bottom:3rem}
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;
+}
+.metric-card{
+  padding:1.75rem 1.5rem;border:1px solid var(--border);border-radius:10px;
+  background:var(--s2);text-align:left;
+  position:relative;overflow:hidden;
+  transition:border-color .2s,transform .15s;
+}
+.metric-card:hover{border-color:var(--border-bright);transform:translateY(-3px)}
+.metric-accent{
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+  border-radius:0 0 10px 10px;
+}
+.metric-num{
+  font-size:2.5rem;font-weight:800;letter-spacing:-.04em;
+  line-height:1;margin-bottom:.5rem;display:block;
+}
+.metric-label{font-size:.78rem;color:var(--text-muted);font-weight:500;line-height:1.4}
+
+/* ── LIVE DEMO ── */
+#demo .demo-inner{max-width:900px;margin:0 auto;text-align:center}
+.demo-heading-wrap{text-align:center;margin-bottom:2.5rem}
+.demo-tabs{
+  display:flex;gap:.5rem;margin-bottom:1rem;
+  border-bottom:1px solid var(--border);padding-bottom:0;
+  flex-wrap:wrap;
+}
+.demo-tab{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.1rem;border-radius:6px 6px 0 0;border:none;
+  background:transparent;color:var(--text-muted);cursor:pointer;
+  font-family:var(--font);font-size:.82rem;font-weight:600;letter-spacing:.01em;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .2s,border-color .2s;position:relative;
+}
+.demo-tab:hover{color:var(--text)}
+.demo-tab.active{color:var(--text);border-bottom-color:var(--red)}
+.demo-tab-badge{
+  font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:.15rem .4rem;border-radius:3px;
+}
+.demo-tab-badge-live{color:var(--green);background:var(--green-dim);border:1px solid rgba(34,197,94,0.25)}
+.demo-tab-badge-wip{color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,158,11,0.25)}
+.demo-panel{display:none;animation:tab-fade .2s ease}
+.demo-panel.active{display:block}
+@keyframes tab-fade{from{opacity:0}to{opacity:1}}
+.browser-chrome{
+  border-radius:12px;overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--s2);
+}
+.browser-toolbar{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.75rem 1rem;
+  background:var(--s1);border-bottom:1px solid var(--border);
+}
+.browser-dots{display:flex;gap:.4rem}
+.browser-dot{width:10px;height:10px;border-radius:50%}
+.browser-dot-red{background:#ff5f57}
+.browser-dot-amber{background:#febc2e}
+.browser-dot-green{background:#28c840}
+.browser-urlbar{
+  flex:1;display:flex;align-items:center;gap:.5rem;
+  background:var(--bg);border:1px solid var(--border);border-radius:5px;
+  padding:.3rem .75rem;
+}
+.browser-lock{color:var(--green);flex-shrink:0}
+.browser-url{font-size:.78rem;color:var(--text-muted);font-family:monospace}
+.browser-body{
+  position:relative;
+  aspect-ratio:16/9;min-height:480px;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+}
+.demo-overlay{
+  position:absolute;inset:0;z-index:10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+  background:var(--bg);
+}
+.demo-overlay-title{font-size:1.1rem;font-weight:700;color:var(--text-muted)}
+.demo-load-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--red);color:#fff;
+  font-size:.9rem;font-weight:700;letter-spacing:.02em;
+  padding:.75rem 1.75rem;border-radius:6px;border:none;cursor:pointer;
+  transition:transform .15s,box-shadow .2s;
+}
+.demo-load-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--red-glow)}
+#demo-iframe{
+  width:100%;height:100%;border:none;
+  position:absolute;inset:0;
+  display:none;
+}
+.demo-cta-panel{
+  padding:3rem 2rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;
+  background:var(--bg);min-height:220px;
+}
+.demo-wip-card{
+  padding:3rem 2rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;
+  background:var(--bg);
+  border:1px solid rgba(245,158,11,0.25);border-radius:10px;
+  min-height:220px;
+}
+.demo-wip-icon{
+  width:52px;height:52px;border-radius:10px;
+  background:var(--amber-dim);border:1px solid rgba(245,158,11,0.3);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--amber);
+}
+.demo-wip-title{font-size:1.1rem;font-weight:700;color:var(--text)}
+.demo-wip-sub{font-size:.85rem;color:var(--text-muted);text-align:center;max-width:38ch;line-height:1.6}
+.demo-wip-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  color:var(--amber);font-size:.82rem;font-weight:700;letter-spacing:.03em;
+  padding:.55rem 1.2rem;border-radius:6px;border:1px solid rgba(245,158,11,0.35);
+  background:var(--amber-dim);cursor:pointer;
+  transition:transform .15s,box-shadow .2s;text-decoration:none;
+}
+.demo-wip-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,158,11,0.2)}
+
+/* ── MOBILE SCREENS ── */
+#screens .screens-heading-wrap{text-align:center;margin-bottom:3rem}
+.phone-frames{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;
+  align-items:start;
+}
+.phone-frame{
+  border-radius:32px;overflow:hidden;
+  border:2px solid var(--border-bright);
+  background:var(--bg);
+  aspect-ratio:9/19;
+  position:relative;
+  box-shadow:0 24px 64px rgba(0,0,0,0.4);
+  display:flex;flex-direction:column;
+}
+.phone-status-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.5rem 1rem .25rem;
+  font-size:.55rem;font-weight:700;color:var(--text-muted);
+  letter-spacing:.04em;flex-shrink:0;
+}
+.phone-body{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+
+/* Phone 1 — Officer Map */
+.p1-map{
+  flex:1;position:relative;
+  background:#0a0f14;overflow:hidden;
+}
+.p1-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(6,182,212,0.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(6,182,212,0.05) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+.p1-sos{
+  position:absolute;width:12px;height:12px;border-radius:50%;
+  background:var(--red);
+}
+.p1-sos::after{
+  content:'';position:absolute;inset:-5px;border-radius:50%;
+  animation:ping 2s infinite;border:1.5px solid rgba(239,68,68,0.5);
+}
+.p1-patrol{
+  position:absolute;width:9px;height:9px;border-radius:50%;
+  background:var(--teal);box-shadow:0 0 5px var(--teal);
+}
+.p1-label{
+  position:absolute;font-size:.45rem;font-weight:700;
+  color:var(--red);background:rgba(0,0,0,0.8);
+  padding:.1rem .25rem;border-radius:2px;border:1px solid rgba(239,68,68,0.3);
+  white-space:nowrap;
+}
+.p1-bottom-bar{
+  padding:.5rem .75rem;background:#0d1117;
+  border-top:1px solid var(--border);
+}
+.p1-alert-count{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+}
+.p1-alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:ping 2s infinite}
+.p1-nav{
+  display:flex;justify-content:space-around;align-items:center;
+  padding:.4rem .5rem;background:var(--s1);
+  border-top:1px solid var(--border);flex-shrink:0;
+}
+.p1-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:.15rem;
+  font-size:.45rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--text-dim);
+}
+.p1-nav-item.active{color:var(--teal)}
+.p1-nav-icon{width:14px;height:14px}
+
+/* Phone 2 — SOS Detail */
+.p2-header{
+  padding:.6rem .75rem;
+  background:rgba(239,68,68,0.15);border-bottom:1px solid rgba(239,68,68,0.3);
+  flex-shrink:0;
+}
+.p2-sos-id{font-size:.8rem;font-weight:800;color:var(--red);letter-spacing:.06em}
+.p2-sos-sub{font-size:.55rem;color:var(--text-muted);margin-top:.1rem}
+.p2-body{flex:1;padding:.6rem .75rem;overflow:hidden;display:flex;flex-direction:column;gap:.5rem}
+.p2-field-label{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)}
+.p2-field-val{font-size:.7rem;color:var(--text);font-weight:600;margin-top:.1rem}
+.p2-distress{
+  padding:.5rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:4px;
+  font-size:.62rem;color:var(--text-muted);font-style:italic;line-height:1.4;
+}
+.p2-nav-btn{
+  padding:.45rem;text-align:center;border-radius:4px;
+  font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  margin-top:auto;
+}
+.p2-btn-red{background:var(--red);color:#fff}
+.p2-btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-muted);margin-top:.3rem}
+
+/* Phone 3 — Route */
+.p3-header{
+  padding:.6rem .75rem;
+  background:rgba(6,182,212,0.1);border-bottom:1px solid rgba(6,182,212,0.2);
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.p3-badge{
+  font-size:.5rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--teal);padding:.15rem .35rem;
+  border:1px solid rgba(6,182,212,0.3);border-radius:3px;background:rgba(6,182,212,0.1);
+}
+.p3-route-sum{font-size:.55rem;color:var(--text-muted)}
+.p3-body{flex:1;padding:.6rem .75rem;display:flex;flex-direction:column;gap:.5rem}
+.p3-stop{
+  display:flex;gap:.4rem;align-items:flex-start;
+  padding:.5rem;border:1px solid var(--border);border-radius:4px;background:var(--s1);
+}
+.p3-stop-num{
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);
+  color:var(--teal);font-size:.5rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.p3-stop-name{font-size:.65rem;font-weight:700;color:var(--text)}
+.p3-stop-meta{font-size:.5rem;color:var(--text-muted);margin-top:.1rem}
+.p3-risk-crit{
+  font-size:.48rem;font-weight:700;color:var(--red);
+  padding:.1rem .25rem;border-radius:2px;background:var(--red-dim);
+  border:1px solid rgba(239,68,68,0.2);display:inline-block;margin-top:.15rem;
+}
+.p3-risk-high{
+  font-size:.48rem;font-weight:700;color:var(--amber);
+  padding:.1rem .25rem;border-radius:2px;background:var(--amber-dim);
+  border:1px solid rgba(245,158,11,0.2);display:inline-block;margin-top:.15rem;
+}
+.p3-cta{
+  margin-top:auto;padding:.45rem;text-align:center;border-radius:4px;
+  font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--teal);color:#000;
+}
+
+/* Phone 4 — Command Monitor */
+.p4-header{
+  padding:.6rem .75rem;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.p4-title{font-size:.7rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text)}
+.p4-sub{font-size:.52rem;color:var(--text-muted);margin-top:.1rem}
+.p4-body{flex:1;padding:.5rem .6rem;display:flex;flex-direction:column;gap:.35rem;overflow:hidden}
+.p4-zone{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.4rem .5rem;border-radius:4px;background:var(--s1);
+  border:1px solid var(--border);
+  border-left-width:3px;
+}
+.p4-zone-name{font-size:.62rem;font-weight:700;flex:1}
+.p4-zone-risk{font-size:.48rem;font-weight:800;letter-spacing:.06em}
+.p4-zone-count{
+  font-size:.55rem;font-weight:700;color:var(--text-muted);margin-left:auto;margin-right:.4rem;
+}
+.p4-flag{
+  font-size:.48rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--teal);padding:.15rem .3rem;border:1px solid rgba(6,182,212,0.3);border-radius:2px;
+  background:rgba(6,182,212,0.08);white-space:nowrap;
+}
+.p4-cta{
+  margin:.35rem .6rem .5rem;padding:.45rem;text-align:center;border-radius:4px;
+  font-size:.55rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--red);color:#fff;
+}
+
+/* ── TEAM ── */
+#team{text-align:center}
+.team-heading-wrap{text-align:center;margin-bottom:3rem}
+.team-card-wrap{display:flex;justify-content:center;margin-bottom:2rem}
+.team-card{
+  padding:2rem 2.5rem;border:1px solid var(--border);border-radius:12px;
+  background:var(--s1);display:flex;align-items:center;gap:1.5rem;
+  text-align:left;
+}
+.team-avatar{
+  width:56px;height:56px;border-radius:10px;
+  background:var(--red-dim);border:1px solid rgba(239,68,68,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:800;color:var(--red);flex-shrink:0;
+}
+.team-name{font-size:1.1rem;font-weight:700;margin-bottom:.25rem}
+.team-role{font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem}
+.team-inst{
+  font-size:.72rem;font-weight:600;letter-spacing:.04em;
+  color:var(--text-dim);text-transform:uppercase;
+}
+.aws-competition-strip{
+  max-width:700px;margin:0 auto;
+  padding:1.5rem 2rem;border:1px solid var(--border);border-radius:10px;
+  background:var(--s1);
+  display:flex;align-items:center;gap:1.5rem;text-align:left;
+}
+.aws-comp-icon{
+  width:44px;height:44px;flex-shrink:0;
+  background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:var(--amber);
+}
+.aws-comp-title{font-size:.85rem;font-weight:700;margin-bottom:.3rem}
+.aws-comp-body{font-size:.8rem;color:var(--text-muted);line-height:1.5}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);
+  padding:2rem 0;
+}
+.footer-inner{
+  max-width:1200px;margin:0 auto;padding:0 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;
+}
+.footer-logo{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.85rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+}
+.footer-logo svg{color:var(--red)}
+.footer-copy{font-size:.78rem;color:var(--text-dim)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .problem-grid{grid-template-columns:1fr;gap:3rem}
+  .how-steps{flex-direction:column;align-items:stretch}
+  .how-step{width:100%}
+  .how-connector{display:none}
+  .bento-grid{grid-template-columns:1fr;grid-template-rows:auto}
+  .bento-main,.bento-ml{grid-row:auto;grid-column:auto}
+  .bento-row2{grid-column:auto;grid-template-columns:1fr}
+  #tech .tech-inner{grid-template-columns:1fr;gap:2rem}
+  .arch-flows{grid-template-columns:1fr;grid-column:auto}
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  .phone-frames{grid-template-columns:repeat(2,1fr)}
+  .tech-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
+  .hero-stats{gap:1.5rem}
+  .hero-stat{border-right:none;padding-right:0;margin-right:0;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+  .hero-stat:last-child{border-bottom:none;padding-bottom:0}
+  .hero-stats{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:480px){
+  .phone-frames{grid-template-columns:1fr 1fr}
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  .problem-stats{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" aria-label="Rakshak home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      <span>RAKSHAK</span>
+    </a>
+    <span class="nav-aws-pill">AWS 10000 AIdeas</span>
+    <ul class="nav-links" role="list">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#tech">Tech Stack</a></li>
+      <li><a href="#demo">Live Demo</a></li>
+    </ul>
+    <a href="https://rakshak-sentinel-app.netlify.app" target="_blank" rel="noopener noreferrer" class="nav-cta">
+      Launch Dashboard <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+    <button class="nav-hamburger" aria-label="Menu" onclick="document.querySelector('.nav-links').style.display=document.querySelector('.nav-links').style.display==='flex'?'none':'flex'">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero" aria-label="Hero">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="hero-red-glow" aria-hidden="true"></div>
+  <div class="hero-teal-glow" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot" aria-hidden="true"></span>
+      System Operational &middot; Chennai, Tamil Nadu
+    </div>
+    <h1 class="hero-h1">
+      AI-Powered<br>
+      <span>Safety Intelligence</span><br>
+      for Chennai
+    </h1>
+    <p class="hero-sub">Real-time ML risk prediction across 44 zones. Live patrol dispatch. One-tap SOS. Built for Chennai Police — powered by AWS.</p>
+    <div class="hero-actions">
+      <a href="https://rakshak-sentinel-app.netlify.app" target="_blank" rel="noopener noreferrer" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        View Live Dashboard
+      </a>
+      <a href="#how" class="btn-outline">
+        See How It Works
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">44+</span>
+        <span class="hero-stat-label">Zones Monitored</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">20</span>
+        <span class="hero-stat-label">Active Patrols</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">92%</span>
+        <span class="hero-stat-label">ML Accuracy</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">Top 50</span>
+        <span class="hero-stat-label">AWS AIdeas Ranking</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROBLEM ── -->
+<section id="problem" class="section" aria-labelledby="problem-heading">
+  <div class="container">
+    <div class="problem-grid">
+      <div>
+        <span class="section-label">The Problem</span>
+        <h2 class="section-heading" id="problem-heading">Chennai's safety infrastructure has critical gaps</h2>
+        <p class="section-sub">Current emergency systems weren't built for real-time intelligence. When seconds matter, analog processes fail.</p>
+        <div class="problem-failures">
+          <div class="failure-card reveal">
+            <div class="failure-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.58 4.92 2 2 0 0 1 3.55 2.72h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div>
+              <div class="failure-title">Emergency calls go unanswered</div>
+              <div class="failure-desc">8+ minute hold times on emergency lines during peak hours. By the time dispatch reaches the scene, the window has closed.</div>
+            </div>
+          </div>
+          <div class="failure-card reveal">
+            <div class="failure-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="failure-title">Static patrol scheduling</div>
+              <div class="failure-desc">Routes are fixed by shift, not by risk. High-incident zones at 11 PM receive the same patrol density as mid-day markets.</div>
+            </div>
+          </div>
+          <div class="failure-card reveal">
+            <div class="failure-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div>
+              <div class="failure-title">No command-level visibility</div>
+              <div class="failure-desc">Zero real-time dashboard. Dispatchers work from static maps and radio — no live unit tracking, no zone-level threat analysis.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="problem-stats">
+          <div class="prob-stat-card reveal">
+            <span class="prob-stat-num">71%</span>
+            <span class="prob-stat-label">women feel unsafe after 9 PM in Chennai</span>
+          </div>
+          <div class="prob-stat-card reveal">
+            <span class="prob-stat-num">3×</span>
+            <span class="prob-stat-label">rise in harassment incidents over 3 years</span>
+          </div>
+          <div class="prob-stat-card reveal">
+            <span class="prob-stat-num">44</span>
+            <span class="prob-stat-label">distinct pincodes with varying risk profiles</span>
+          </div>
+          <div class="prob-stat-card reveal">
+            <span class="prob-stat-num">8+ min</span>
+            <span class="prob-stat-label">current average emergency response time</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how" class="section" aria-labelledby="how-heading">
+  <div class="container">
+    <div class="how-heading-wrap">
+      <span class="section-label">Architecture</span>
+      <h2 class="section-heading" id="how-heading">Three systems. One unified response.</h2>
+      <p class="section-sub" style="margin:0 auto">From citizen SOS to patrol dispatch in under 6 minutes — every layer connected, every decision AI-informed.</p>
+    </div>
+    <div class="how-steps">
+      <div class="how-step reveal">
+        <div class="step-num">Step 01</div>
+        <div class="step-icon step-icon-red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="step-title">Citizen SOS</div>
+        <p class="step-desc">One tap triggers simultaneous emergency contact alerts, live GPS location share, and nearest patrol unit notification. Night Watch mode activates automatically when ML risk crosses threshold after 10 PM.</p>
+        <div class="step-tags">
+          <span class="step-tag">Flutter</span>
+          <span class="step-tag">GPS</span>
+          <span class="step-tag">Push</span>
+        </div>
+      </div>
+      <div class="how-connector" aria-hidden="true"></div>
+      <div class="how-step reveal">
+        <div class="step-num">Step 02</div>
+        <div class="step-icon step-icon-amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <div class="step-title">AI Risk Analysis</div>
+        <p class="step-desc">AWS SageMaker endpoint processes 17 features — pincode, time-of-day, historical incident density, signal strength, proximity to transit. SHAP provides interpretable risk attribution. Sub-200ms inference.</p>
+        <div class="step-tags">
+          <span class="step-tag">SageMaker</span>
+          <span class="step-tag">Lambda</span>
+          <span class="step-tag">SHAP</span>
+        </div>
+      </div>
+      <div class="how-connector" aria-hidden="true"></div>
+      <div class="how-step reveal">
+        <div class="step-num">Step 03</div>
+        <div class="step-icon step-icon-teal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </div>
+        <div class="step-title">Patrol Dispatch</div>
+        <p class="step-desc">20 patrol units routed via OSRM on real Chennai road network. Command center sees live positions, zone risk overlays, and SOS feed simultaneously. Officer tactical app receives AI-optimised waypoints.</p>
+        <div class="step-tags">
+          <span class="step-tag">OSRM</span>
+          <span class="step-tag">Leaflet</span>
+          <span class="step-tag">DynamoDB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features" class="section" aria-labelledby="features-heading">
+  <div class="container">
+    <span class="section-label">Platform</span>
+    <h2 class="section-heading" id="features-heading">Command-grade intelligence. Production-ready infrastructure.</h2>
+    <div class="bento-grid">
+      <!-- Main: Dashboard -->
+      <div class="bento-card bento-main reveal">
+        <div class="bento-card-label">Command Center</div>
+        <div class="bento-card-title">Real-Time Command Dashboard</div>
+        <p class="bento-card-desc">React + Leaflet map with all 44 Chennai pincodes colour-coded by live ML risk score. WebSocket real-time updates. SOS alert feed with one-click dispatch. 20 patrol units visible on real road network.</p>
+        <!-- Dashboard Mock -->
+        <div class="dashboard-mock" aria-hidden="true">
+          <div class="mock-map-grid"></div>
+          <!-- Zones -->
+          <div class="mock-zone mock-zone-red" style="left:15%;top:20%;width:18%;height:22%"></div>
+          <div class="mock-zone mock-zone-amber" style="left:40%;top:10%;width:22%;height:28%"></div>
+          <div class="mock-zone mock-zone-teal" style="left:65%;top:30%;width:20%;height:25%"></div>
+          <div class="mock-zone mock-zone-amber" style="left:10%;top:55%;width:25%;height:20%"></div>
+          <!-- SOS alerts -->
+          <div class="mock-alert" style="left:22%;top:30%"></div>
+          <div class="mock-label mock-label-red" style="left:26%;top:27%">SOS-991</div>
+          <div class="mock-alert" style="left:52%;top:18%"></div>
+          <div class="mock-label mock-label-red" style="left:56%;top:15%">SOS-992</div>
+          <!-- Patrol dots -->
+          <div class="mock-patrol patrol-a" style="left:35%;top:45%"></div>
+          <div class="mock-label mock-label-teal" style="left:39%;top:42%">P-07</div>
+          <div class="mock-patrol patrol-b" style="left:60%;top:55%"></div>
+          <div class="mock-label mock-label-teal" style="left:64%;top:52%">P-14</div>
+          <div class="mock-patrol patrol-c" style="left:18%;top:62%"></div>
+          <div class="mock-patrol" style="left:75%;top:40%;animation:patrol-move-a 9s ease-in-out infinite reverse"></div>
+          <!-- Status bar -->
+          <div class="mock-status-bar">
+            <span class="status-text"><span class="status-dot"></span>LIVE · 20 units · 2 SOS active</span>
+            <span class="status-text" style="color:var(--teal)">WS CONNECTED</span>
+          </div>
+        </div>
+      </div>
+      <!-- ML -->
+      <div class="bento-card bento-ml reveal">
+        <div class="bento-card-label">Intelligence Layer</div>
+        <div class="bento-card-title">ML Risk Scoring Engine</div>
+        <p class="bento-card-desc">AWS SageMaker trained on 44 pincodes, 17 features. SHAP interpretability. 92% validation accuracy. Sub-200ms inference per request.</p>
+        <!-- Bar chart mock -->
+        <div class="ml-bars" id="ml-bars" aria-hidden="true">
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="72px" style="--bar-h:72px;animation-delay:0.1s;background:linear-gradient(to top,var(--red),rgba(239,68,68,0.4))"></div>
+            <span class="ml-bar-label">T.Ngr</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="65px" style="--bar-h:65px;animation-delay:0.2s;background:linear-gradient(to top,var(--red),rgba(239,68,68,0.3))"></div>
+            <span class="ml-bar-label">Mylpr</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="50px" style="--bar-h:50px;animation-delay:0.3s;background:linear-gradient(to top,var(--amber),rgba(245,158,11,0.3))"></div>
+            <span class="ml-bar-label">Adyar</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="44px" style="--bar-h:44px;animation-delay:0.4s;background:linear-gradient(to top,var(--amber),rgba(245,158,11,0.2))"></div>
+            <span class="ml-bar-label">Anna</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="30px" style="--bar-h:30px;animation-delay:0.5s;background:linear-gradient(to top,var(--teal),rgba(6,182,212,0.2))"></div>
+            <span class="ml-bar-label">Pram</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="18px" style="--bar-h:18px;animation-delay:0.6s;background:linear-gradient(to top,var(--green),rgba(34,197,94,0.2))"></div>
+            <span class="ml-bar-label">Porur</span>
+          </div>
+          <div class="ml-bar-wrap">
+            <div class="ml-bar" data-h="12px" style="--bar-h:12px;animation-delay:0.7s;background:linear-gradient(to top,var(--green),rgba(34,197,94,0.15))"></div>
+            <span class="ml-bar-label">Amb</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">
+          <span class="badge-red">92% Accuracy</span>
+          <span class="badge-teal">17 Features</span>
+          <span style="display:inline-flex;align-items:center;gap:.4rem;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:.25rem .6rem;border:1px solid var(--border);border-radius:3px;background:var(--s2);">&lt;200ms</span>
+        </div>
+      </div>
+      <!-- Row 2 small cards -->
+      <div class="bento-row2">
+        <div class="bento-card reveal">
+          <div class="bento-card-label">Routing</div>
+          <div class="bento-card-title">Live Patrol Routing</div>
+          <p class="bento-card-desc" style="max-width:none">OSRM engine on real Chennai road network. 20 units, dynamically re-routed based on SOS events and zone risk escalation.</p>
+          <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="badge-teal">OSRM</span>
+            <span class="badge-teal">Real Roads</span>
+          </div>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-card-label">Citizen Layer</div>
+          <div class="bento-card-title">One-Tap SOS System</div>
+          <p class="bento-card-desc" style="max-width:none">Single tap triggers three simultaneous actions: emergency contact alert, live GPS share, and nearest unit dispatch notification. Night Watch auto-activates post 10 PM.</p>
+          <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="badge-red">Night Watch</span>
+          </div>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-card-label">Officer Layer</div>
+          <div class="bento-card-title">Officer Tactical App</div>
+          <p class="bento-card-desc" style="max-width:none">Flutter app for on-duty officers. Live SOS alerts, AI-optimised patrol routes, zone risk levels, fleet status, and GO ON DUTY authentication flow.</p>
+          <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="badge-teal">Flutter</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TECH STACK ── -->
+<section id="tech" class="section" aria-labelledby="tech-heading">
+  <div class="container">
+    <div class="tech-inner">
+      <div>
+        <span class="section-label">Infrastructure</span>
+        <h2 class="section-heading" id="tech-heading">Production-grade.<br>Serverless.<br>Scalable.</h2>
+        <p class="section-sub">Every component chosen for resilience under load. Zero cold-start overhead on critical SOS paths. DynamoDB streams drive real-time WebSocket updates with sub-50ms propagation.</p>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(255,153,0,0.12);color:#ff9900;font-size:.55rem">SM</div>
+          <div class="tech-name">AWS SageMaker</div>
+          <div class="tech-role">ML training &amp; inference</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(255,153,0,0.12);color:#ff9900;font-size:.55rem">λ</div>
+          <div class="tech-name">AWS Lambda</div>
+          <div class="tech-role">Serverless backend</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(0,114,255,0.12);color:#4d9eff;font-size:.55rem">DB</div>
+          <div class="tech-name">DynamoDB</div>
+          <div class="tech-role">Real-time state store</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(255,153,0,0.12);color:#ff9900;font-size:.55rem">GW</div>
+          <div class="tech-name">API Gateway</div>
+          <div class="tech-role">REST + WS layer</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(97,218,251,0.12);color:#61dafb;font-size:.55rem">Re</div>
+          <div class="tech-name">React</div>
+          <div class="tech-role">Command dashboard</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(84,182,246,0.12);color:#54b6f6;font-size:.55rem">Fl</div>
+          <div class="tech-name">Flutter</div>
+          <div class="tech-role">Citizen + officer apps</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(34,197,94,0.12);color:#22c55e;font-size:.55rem">Lf</div>
+          <div class="tech-name">Leaflet.js</div>
+          <div class="tech-role">Interactive map</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(100,100,100,0.12);color:var(--text-muted);font-size:.55rem">OS</div>
+          <div class="tech-name">OSRM</div>
+          <div class="tech-role">Road routing engine</div>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-logo" style="background:rgba(255,215,0,0.1);color:#ffd700;font-size:.55rem">Py</div>
+          <div class="tech-name">Python + SHAP</div>
+          <div class="tech-role">ML pipeline &amp; XAI</div>
+        </div>
+      </div>
+    </div>
+    <!-- Architecture flows -->
+    <div class="arch-flows reveal">
+      <div class="arch-flow">
+        <div class="arch-flow-title">Citizen SOS Flow</div>
+        <div class="arch-step"><span class="arch-chip">Flutter App</span><span class="arch-arrow">→</span><span class="arch-chip">API Gateway</span></div>
+        <div class="arch-step"><span class="arch-chip">Lambda</span><span class="arch-arrow">→</span><span class="arch-chip">DynamoDB</span></div>
+        <div class="arch-step"><span class="arch-chip">WS Push</span><span class="arch-arrow">→</span><span class="arch-chip">Dashboard + Officer</span></div>
+      </div>
+      <div class="arch-flow">
+        <div class="arch-flow-title">ML Inference Flow</div>
+        <div class="arch-step"><span class="arch-chip">Pincode + Time</span><span class="arch-arrow">→</span><span class="arch-chip">Lambda</span></div>
+        <div class="arch-step"><span class="arch-chip">SageMaker EP</span><span class="arch-arrow">→</span><span class="arch-chip">Risk Score</span></div>
+        <div class="arch-step"><span class="arch-chip">SHAP Values</span><span class="arch-arrow">→</span><span class="arch-chip">Interpretability</span></div>
+      </div>
+      <div class="arch-flow">
+        <div class="arch-flow-title">Dashboard Flow</div>
+        <div class="arch-step"><span class="arch-chip">React + Leaflet</span><span class="arch-arrow">→</span><span class="arch-chip">API Gateway</span></div>
+        <div class="arch-step"><span class="arch-chip">DynamoDB Streams</span><span class="arch-arrow">→</span><span class="arch-chip">WebSocket</span></div>
+        <div class="arch-step"><span class="arch-chip">OSRM Routes</span><span class="arch-arrow">→</span><span class="arch-chip">Patrol Overlay</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── IMPACT NUMBERS ── -->
+<section id="impact" class="section" aria-labelledby="impact-heading">
+  <div class="container">
+    <div class="impact-heading-wrap">
+      <span class="section-label">By the Numbers</span>
+      <h2 class="section-heading" id="impact-heading">Operational metrics. Real infrastructure.</h2>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card reveal">
+        <span class="metric-num count-up" data-target="44" style="color:var(--red)">0</span>
+        <span class="metric-label">Chennai Pincodes Monitored</span>
+        <div class="metric-accent" style="background:var(--red)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num count-up" data-target="20" style="color:var(--teal)">0</span>
+        <span class="metric-label">Active Patrol Units</span>
+        <div class="metric-accent" style="background:var(--teal)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num count-up" data-target="92" data-suffix="%" style="color:var(--green)">0</span>
+        <span class="metric-label">ML Model Accuracy</span>
+        <div class="metric-accent" style="background:var(--green)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num" style="color:var(--amber)">6.2 min</span>
+        <span class="metric-label">Avg SOS Response Time</span>
+        <div class="metric-accent" style="background:var(--amber)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num count-up" data-target="17" style="color:var(--teal)">0</span>
+        <span class="metric-label">ML Feature Parameters</span>
+        <div class="metric-accent" style="background:var(--teal)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num" style="color:var(--text)">&lt;200ms</span>
+        <span class="metric-label">SageMaker Inference Latency</span>
+        <div class="metric-accent" style="background:var(--text-dim)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num count-up" data-target="3" style="color:var(--red)">0</span>
+        <span class="metric-label">Connected Systems</span>
+        <div class="metric-accent" style="background:var(--red)"></div>
+      </div>
+      <div class="metric-card reveal">
+        <span class="metric-num" style="color:var(--green)">Top 50</span>
+        <span class="metric-label">AWS AIdeas Ranking Globally</span>
+        <div class="metric-accent" style="background:var(--green)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LIVE DEMO ── -->
+<section id="demo" class="section" aria-labelledby="demo-heading">
+  <div class="demo-inner container">
+    <div class="demo-heading-wrap">
+      <span class="section-label">Live System</span>
+      <h2 class="section-heading" id="demo-heading">Three platforms. One mission.</h2>
+      <p class="section-sub" style="margin:0 auto .5rem">Explore each layer of the Rakshak stack — from command intelligence to field dispatch to citizen safety.</p>
+    </div>
+    <div class="reveal">
+      <!-- Tab bar -->
+      <div class="demo-tabs" role="tablist">
+        <button class="demo-tab active" role="tab" aria-selected="true" aria-controls="tab-panel-dashboard" onclick="switchTab('dashboard',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Command Dashboard
+          <span class="demo-tab-badge demo-tab-badge-live">LIVE</span>
+        </button>
+        <button class="demo-tab" role="tab" aria-selected="false" aria-controls="tab-panel-citizen" onclick="switchTab('citizen',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Citizen SOS App
+          <span class="demo-tab-badge demo-tab-badge-live">LIVE</span>
+        </button>
+        <button class="demo-tab" role="tab" aria-selected="false" aria-controls="tab-panel-officer" onclick="switchTab('officer',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          Officer Tactical App
+          <span class="demo-tab-badge demo-tab-badge-wip">IN PROGRESS</span>
+        </button>
+      </div>
+
+      <!-- Panel: Command Dashboard -->
+      <div class="demo-panel active" id="tab-panel-dashboard" role="tabpanel">
+        <div class="browser-chrome">
+          <div class="browser-toolbar">
+            <div class="browser-dots">
+              <div class="browser-dot browser-dot-red"></div>
+              <div class="browser-dot browser-dot-amber"></div>
+              <div class="browser-dot browser-dot-green"></div>
+            </div>
+            <div class="browser-urlbar">
+              <svg class="browser-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span class="browser-url">rakshak-sentinel-app.netlify.app</span>
+            </div>
+          </div>
+          <div class="browser-body">
+            <div class="demo-overlay" id="demo-overlay">
+              <div class="demo-overlay-title">Live Dashboard Preview</div>
+              <button class="demo-load-btn" onclick="loadDashboard()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Load Live Dashboard
+              </button>
+              <p style="font-size:.75rem;color:var(--text-dim);max-width:32ch;text-align:center;line-height:1.5">Loads the production React app connected to AWS Lambda + DynamoDB</p>
+            </div>
+            <iframe id="demo-iframe" src="" title="Rakshak Command Dashboard" allow="geolocation" loading="lazy"></iframe>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1.25rem">
+          <a href="https://rakshak-sentinel-app.netlify.app" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:inline-flex">
+            Open in Full Tab
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Panel: Citizen SOS App -->
+      <div class="demo-panel" id="tab-panel-citizen" role="tabpanel">
+        <div class="browser-chrome">
+          <div class="browser-toolbar">
+            <div class="browser-dots">
+              <div class="browser-dot browser-dot-red"></div>
+              <div class="browser-dot browser-dot-amber"></div>
+              <div class="browser-dot browser-dot-green"></div>
+            </div>
+            <div class="browser-urlbar">
+              <svg class="browser-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span class="browser-url">Rakshak — Citizen Safety App</span>
+            </div>
+          </div>
+          <div class="browser-body">
+            <div class="demo-cta-panel">
+              <div style="width:52px;height:52px;border-radius:10px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;color:var(--red)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <div style="font-size:1.05rem;font-weight:700;margin-bottom:.35rem">Citizen SOS App</div>
+                <div style="font-size:.85rem;color:var(--text-muted);max-width:40ch;line-height:1.6;text-align:center">Flutter app — one-tap SOS, Night Watch mode, live GPS share. Available for download.</div>
+              </div>
+              <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center">
+                <a href="#screens" class="btn-primary">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  View App Screens
+                </a>
+                <span style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--green);padding:.55rem 1rem;border:1px solid rgba(34,197,94,0.25);border-radius:6px;background:var(--green-dim)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Flutter · Available for Download
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Officer Tactical App -->
+      <div class="demo-panel" id="tab-panel-officer" role="tabpanel">
+        <div class="browser-chrome">
+          <div class="browser-toolbar">
+            <div class="browser-dots">
+              <div class="browser-dot browser-dot-red"></div>
+              <div class="browser-dot browser-dot-amber"></div>
+              <div class="browser-dot browser-dot-green"></div>
+            </div>
+            <div class="browser-urlbar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--amber);flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="browser-url">Officer Tactical App — In Active Development</span>
+            </div>
+          </div>
+          <div class="browser-body">
+            <div class="demo-wip-card">
+              <div class="demo-wip-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="demo-wip-title">Officer App — In Active Development</div>
+              <div class="demo-wip-sub">Patrol routing, SOS response, fleet dispatch. GO ON DUTY authentication flow. Launching soon.</div>
+              <a href="#screens" class="demo-wip-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Follow Progress
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MOBILE SCREENS ── -->
+<section id="screens" class="section" aria-labelledby="screens-heading" style="background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="screens-heading-wrap">
+      <span class="section-label">Mobile Apps</span>
+      <h2 class="section-heading" id="screens-heading">Field-grade UX. No training required.</h2>
+      <p class="section-sub" style="margin:0 auto">Officer tactical app and citizen SOS — both built in Flutter. Screens reflect production UI state.</p>
+    </div>
+    <div class="phone-frames">
+
+      <!-- Phone 1: Officer Map -->
+      <div class="phone-frame reveal" aria-label="Officer map screen">
+        <div class="phone-status-bar">
+          <span>9:41</span>
+          <span>●●●</span>
+        </div>
+        <div class="phone-body">
+          <div class="p1-map">
+            <div class="p1-grid"></div>
+            <!-- zone overlays -->
+            <div style="position:absolute;left:10%;top:15%;width:30%;height:30%;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);border-radius:3px"></div>
+            <div style="position:absolute;left:50%;top:25%;width:35%;height:28%;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.12);border-radius:3px"></div>
+            <div style="position:absolute;left:15%;top:55%;width:28%;height:25%;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.1);border-radius:3px"></div>
+            <!-- SOS markers -->
+            <div class="p1-sos" style="left:22%;top:25%"></div>
+            <div class="p1-label" style="left:28%;top:21%">SOS-991</div>
+            <div class="p1-sos" style="left:58%;top:33%"></div>
+            <div class="p1-label" style="left:64%;top:29%">SOS-992</div>
+            <!-- Patrol dots -->
+            <div class="p1-patrol patrol-a" style="left:40%;top:45%"></div>
+            <div class="p1-patrol patrol-b" style="left:65%;top:58%"></div>
+            <div class="p1-patrol patrol-c" style="left:20%;top:65%"></div>
+          </div>
+          <div class="p1-bottom-bar">
+            <div class="p1-alert-count">
+              <span class="p1-alert-dot"></span>
+              <span style="color:var(--red)">2 ACTIVE SOS ALERTS</span>
+            </div>
+          </div>
+        </div>
+        <div class="p1-nav">
+          <div class="p1-nav-item active">
+            <svg class="p1-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            <span>MAP</span>
+          </div>
+          <div class="p1-nav-item">
+            <svg class="p1-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/><circle cx="12" cy="12" r="10"/></svg>
+            <span>ALERTS</span>
+          </div>
+          <div class="p1-nav-item">
+            <svg class="p1-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            <span>STATUS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone 2: SOS Detail -->
+      <div class="phone-frame reveal" aria-label="SOS alert detail screen">
+        <div class="phone-status-bar">
+          <span>9:41</span>
+          <span style="color:var(--red)">SOS ACTIVE</span>
+        </div>
+        <div class="phone-body">
+          <div class="p2-header">
+            <div class="p2-sos-id">⚠ SOS-991</div>
+            <div class="p2-sos-sub">Received 2 min ago · HIGH PRIORITY</div>
+          </div>
+          <div class="p2-body">
+            <div>
+              <div class="p2-field-label">Location</div>
+              <div class="p2-field-val">T. Nagar Junction, Chennai</div>
+            </div>
+            <div>
+              <div class="p2-field-label">Risk Score</div>
+              <div class="p2-field-val" style="color:var(--red)">87 / 100 · CRITICAL</div>
+            </div>
+            <div>
+              <div class="p2-field-label">Nearest Unit</div>
+              <div class="p2-field-val">Patrol-07 · 1.2 km away</div>
+            </div>
+            <div class="p2-distress">
+              "I'm being followed near the bus stop. Please send help. I'm near the Usman Road intersection."
+            </div>
+            <div class="p2-nav-btn p2-btn-red">NAVIGATE THERE</div>
+            <div class="p2-nav-btn p2-btn-outline">CLOSE ALERT</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone 3: Route -->
+      <div class="phone-frame reveal" aria-label="Optimised patrol route screen">
+        <div class="phone-status-bar">
+          <span>9:41</span>
+          <span style="color:var(--teal)">ON DUTY</span>
+        </div>
+        <div class="phone-body">
+          <div class="p3-header">
+            <div>
+              <span class="p3-badge">PATROL ACTIVE</span>
+              <div class="p3-route-sum" style="margin-top:.3rem">4 stops · 2.8 KM · Est. 18 min</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--teal)"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          </div>
+          <div class="p3-body">
+            <div style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.25rem">ZONE WAYPOINTS</div>
+            <div class="p3-stop">
+              <div class="p3-stop-num">1</div>
+              <div>
+                <div class="p3-stop-name">T. Nagar Junction</div>
+                <div class="p3-stop-meta">ETA 4 min · SOS-991 active</div>
+                <span class="p3-risk-crit">CRITICAL</span>
+              </div>
+            </div>
+            <div class="p3-stop">
+              <div class="p3-stop-num">2</div>
+              <div>
+                <div class="p3-stop-name">Mylapore North</div>
+                <div class="p3-stop-meta">ETA 11 min · 3 incidents logged</div>
+                <span class="p3-risk-crit">CRITICAL</span>
+              </div>
+            </div>
+            <div class="p3-stop">
+              <div class="p3-stop-num">3</div>
+              <div>
+                <div class="p3-stop-name">Adyar Signal</div>
+                <div class="p3-stop-meta">ETA 16 min · Elevated risk</div>
+                <span class="p3-risk-high">HIGH</span>
+              </div>
+            </div>
+            <div class="p3-cta">START NAVIGATION</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone 4: Command Monitor -->
+      <div class="phone-frame reveal" aria-label="Command monitor screen">
+        <div class="phone-status-bar">
+          <span>9:41</span>
+          <span>●●●</span>
+        </div>
+        <div class="phone-body">
+          <div class="p4-header">
+            <div class="p4-title">Command Monitor</div>
+            <div class="p4-sub">Unresolved Journeys · Live</div>
+          </div>
+          <div class="p4-body">
+            <div class="p4-zone" style="border-left-color:var(--red)">
+              <div>
+                <div class="p4-zone-name">Mylapore</div>
+                <div class="p4-zone-risk" style="color:var(--red)">CRITICAL</div>
+              </div>
+              <span class="p4-zone-count">12</span>
+              <span class="p4-flag">FLAG</span>
+            </div>
+            <div class="p4-zone" style="border-left-color:var(--red)">
+              <div>
+                <div class="p4-zone-name">T. Nagar</div>
+                <div class="p4-zone-risk" style="color:var(--red)">CRITICAL</div>
+              </div>
+              <span class="p4-zone-count">11</span>
+              <span class="p4-flag">FLAG</span>
+            </div>
+            <div class="p4-zone" style="border-left-color:var(--amber)">
+              <div>
+                <div class="p4-zone-name">Adyar</div>
+                <div class="p4-zone-risk" style="color:var(--amber)">ELEVATED</div>
+              </div>
+              <span class="p4-zone-count">8</span>
+              <span class="p4-flag">FLAG</span>
+            </div>
+            <div class="p4-zone" style="border-left-color:var(--green)">
+              <div>
+                <div class="p4-zone-name">Anna Nagar</div>
+                <div class="p4-zone-risk" style="color:var(--green)">NORMAL</div>
+              </div>
+              <span class="p4-zone-count">3</span>
+              <span class="p4-flag">FLAG</span>
+            </div>
+          </div>
+          <div class="p4-cta">INITIATE AREA-WIDE ALERT</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── TEAM ── -->
+<section id="team" class="section" aria-labelledby="team-heading">
+  <div class="container">
+    <div class="team-heading-wrap">
+      <span class="section-label">Team</span>
+      <h2 class="section-heading" id="team-heading">Team Rakshak</h2>
+    </div>
+    <div class="team-card-wrap">
+      <div class="team-card reveal">
+        <div class="team-avatar">VG</div>
+        <div>
+          <div class="team-name">Vishal G.</div>
+          <div class="team-role">ML · AWS · Full-Stack Engineering</div>
+          <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:.3rem">2nd Year Undergraduate</div>
+          <div class="team-inst">SRMIST KTR</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <div class="aws-competition-strip reveal">
+        <div class="aws-comp-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="aws-comp-title">AWS 10000 AIdeas Competition — Top 50 Globally</div>
+          <div class="aws-comp-body">Selected Top 50 globally out of thousands worldwide. Targeting Top 20.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--red)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      RAKSHAK
+    </div>
+    <span class="footer-copy">Protecting Chennai, powered by AWS &middot; 2026</span>
+  </div>
+</footer>
+
+<script>
+// ── Hero canvas dot grid ──
+(function(){
+  const canvas=document.getElementById('hero-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const spacing=36,r=1.5;
+  let dots=[],W,H,raf;
+  function resize(){
+    W=canvas.width=canvas.offsetWidth;
+    H=canvas.height=canvas.offsetHeight;
+    dots=[];
+    for(let x=spacing/2;x<W;x+=spacing){
+      for(let y=spacing/2;y<H;y+=spacing){
+        dots.push({x,y,phase:Math.random()*Math.PI*2,speed:.4+Math.random()*.6});
+      }
+    }
+  }
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    const ts=t*.001;
+    for(const d of dots){
+      const opacity=.08+(.22*(Math.sin(ts*d.speed+d.phase)*.5+.5));
+      ctx.fillStyle=`rgba(180,180,190,${opacity})`;
+      ctx.beginPath();ctx.arc(d.x,d.y,r,0,Math.PI*2);ctx.fill();
+    }
+    raf=requestAnimationFrame(draw);
+  }
+  resize();
+  window.addEventListener('resize',()=>{cancelAnimationFrame(raf);resize();raf=requestAnimationFrame(draw)});
+  raf=requestAnimationFrame(draw);
+})();
+
+// ── Nav scroll ──
+(function(){
+  const nav=document.getElementById('nav');
+  window.addEventListener('scroll',()=>{
+    nav.classList.toggle('scrolled',window.scrollY>40);
+  },{passive:true});
+})();
+
+// ── Count-up numbers ──
+(function(){
+  const els=document.querySelectorAll('.count-up');
+  if(!els.length)return;
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting)return;
+      io.unobserve(e.target);
+      const el=e.target;
+      const target=+el.dataset.target;
+      const suffix=el.dataset.suffix||'';
+      const dur=1200;
+      let start=null;
+      function step(ts){
+        if(!start)start=ts;
+        const p=Math.min((ts-start)/dur,1);
+        const eased=1-Math.pow(1-p,3);
+        el.textContent=Math.round(eased*target)+suffix;
+        if(p<1)requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  },{threshold:.3});
+  els.forEach(el=>io.observe(el));
+})();
+
+// ── Demo tab switcher ──
+function switchTab(id,btn){
+  document.querySelectorAll('.demo-tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});
+  document.querySelectorAll('.demo-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');btn.setAttribute('aria-selected','true');
+  document.getElementById('tab-panel-'+id).classList.add('active');
+}
+
+// ── Live demo iframe ──
+function loadDashboard(){
+  const overlay=document.getElementById('demo-overlay');
+  const iframe=document.getElementById('demo-iframe');
+  iframe.src='https://rakshak-sentinel-app.netlify.app';
+  iframe.style.display='block';
+  overlay.style.display='none';
+}
+
+// ── ML bar chart IntersectionObserver ──
+(function(){
+  const bars=document.getElementById('ml-bars');
+  if(!bars)return;
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting)return;
+      io.unobserve(e.target);
+      e.target.classList.add('animated');
+    });
+  },{threshold:.3});
+  io.observe(bars);
+})();
+
+// ── Lucide icons ──
+document.addEventListener('DOMContentLoaded',()=>{
+  if(window.lucide)lucide.createIcons();
+});
+
+// ── prefers-reduced-motion guard ──
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  document.getElementById('hero-canvas').style.display='none';
+}
+</script>
+</body>
+</html>

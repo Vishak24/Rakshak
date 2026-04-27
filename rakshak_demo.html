@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rakshak — AI Safety Intelligence Platform</title>
+<meta name="description" content="Real-time ML-powered women's safety app for Chennai. AWS SageMaker + Flutter.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #050810;
+  color: #fff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Design Tokens ────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #050810;
+  --surface:     #0E1322;
+  --surface-c:   #1A1F2F;
+  --teal:        #00D4B4;
+  --teal-light:  #46F1CF;
+  --danger:      #93000A;
+  --text:        #ffffff;
+  --text-muted:  rgba(255,255,255,0.6);
+  --text-dim:    rgba(255,255,255,0.35);
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+}
+
+/* ── Global Grid Background ───────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(rgba(0,212,180,0.03) 0px, transparent 1px),
+    repeating-linear-gradient(90deg, rgba(0,212,180,0.03) 0px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Typography ───────────────────────────────────────────────────────────── */
+.label-caps {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+.headline {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.body-muted {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── Layout Helpers ───────────────────────────────────────────────────────── */
+.container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+section { position: relative; z-index: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SECTION 1 — HERO                                                          */
+/* ══════════════════════════════════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 80px 0 60px;
+  overflow: hidden;
+}
+
+/* Radial glow behind phone */
+#hero::after {
+  content: '';
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse 600px 400px at center,
+    rgba(0,212,180,0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 80px;
+  align-items: center;
+  width: 100%;
+}
+
+/* ── Hero Left ── */
+.hero-left { display: flex; flex-direction: column; gap: 28px; }
+
+.badge-aws {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--teal);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+.badge-aws::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex-shrink: 0;
+}
+
+.hero-headline {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.hero-headline span { color: var(--teal-light); }
+
+.hero-sub {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: var(--teal);
+  color: #00382E;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: filter 0.15s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary {
+  background: transparent;
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--teal);
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-secondary:hover { background: rgba(0,212,180,0.08); }
+
+.stat-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface-c);
+  border-radius: 100px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.stat-pill::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex-shrink: 0;
+}
+
+/* ── Hero Right — Phone Frame ── */
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.phone-frame {
+  width: 300px;
+  height: 620px;
+  background: linear-gradient(160deg, #2a2a2a 0%, #1a1a1a 40%, #111 100%);
+  border-radius: 52px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 0 0 2px rgba(0,0,0,0.6),
+    0 30px 80px rgba(0,0,0,0.7),
+    0 0 60px rgba(0,212,180,0.08);
+  position: relative;
+  padding: 20px 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Side buttons */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 120px;
+  width: 3px;
+  height: 36px;
+  background: #2a2a2a;
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 50px 0 #2a2a2a, 0 100px 0 #2a2a2a;
+}
+.phone-frame::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 160px;
+  width: 3px;
+  height: 60px;
+  background: #2a2a2a;
+  border-radius: 0 2px 2px 0;
+}
+
+.phone-notch {
+  width: 100px;
+  height: 28px;
+  background: #1a1a1a;
+  border-radius: 0 0 18px 18px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.phone-screen {
+  width: 270px;
+  height: 580px;
+  border-radius: 40px;
+  background: #0A0F1E;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.phone-screen iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 40px;
+}
+
+/* Fallback shown when iframe fails */
+.phone-fallback {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  padding: 24px;
+}
+.phone-screen iframe + .phone-fallback { display: none; }
+
+/* Show fallback if iframe errors — JS-free approach: always render both,
+   iframe covers fallback when loaded */
+.phone-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #0A0F1E;
+  z-index: 0;
+}
+.phone-screen iframe {
+  position: relative;
+  z-index: 1;
+}
+
+.fallback-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.status-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green { background: #22C55E; box-shadow: 0 0 6px #22C55E; }
+.dot-teal  { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SECTION 2 — SCREENSHOTS                                                   */
+/* ══════════════════════════════════════════════════════════════════════════ */
+#screenshots {
+  padding: 100px 0 80px;
+  background: linear-gradient(180deg, transparent 0%, rgba(14,19,34,0.6) 50%, transparent 100%);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.screens-scroll-wrapper {
+  overflow-x: auto;
+  padding: 20px 40px 32px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+}
+.screens-scroll-wrapper::-webkit-scrollbar { display: none; }
+
+.screens-row {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  padding: 0 20px;
+}
+
+.screen-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.mini-phone {
+  width: 180px;
+  height: 360px;
+  background: linear-gradient(160deg, #252525 0%, #1a1a1a 100%);
+  border-radius: 32px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.07),
+    0 20px 50px rgba(0,0,0,0.6),
+    0 0 30px rgba(0,212,180,0.05);
+  position: relative;
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mini-phone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 16px;
+  background: #1a1a1a;
+  border-radius: 0 0 10px 10px;
+  z-index: 2;
+}
+
+.mini-screen {
+  width: 160px;
+  height: 336px;
+  border-radius: 24px;
+  background: #0A0F1E;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid inside mini screens */
+.mini-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(rgba(0,212,180,0.04) 0px, transparent 1px),
+    repeating-linear-gradient(90deg, rgba(0,212,180,0.04) 0px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.mini-screen-icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mini-screen-icon svg {
+  opacity: 0.9;
+}
+
+.mini-screen-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--teal);
+  position: relative;
+  z-index: 1;
+}
+
+.mini-screen-sublabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-dim);
+  position: relative;
+  z-index: 1;
+}
+
+/* Colored accent bar at bottom of each mini screen */
+.mini-screen-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.screen-card-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SECTION 3 — FEATURES                                                      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+#features {
+  padding: 100px 0;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.feature-card {
+  background: var(--surface-c);
+  border-radius: var(--radius-md);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(0,212,180,0.06);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(0,212,180,0.1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.feature-body {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SECTION 4 — TECH STACK                                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+#tech {
+  padding: 80px 0;
+  text-align: center;
+  background: rgba(14,19,34,0.5);
+}
+
+.tech-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 36px;
+}
+
+.tech-badge {
+  background: var(--surface-c);
+  border: 1px solid rgba(0,212,180,0.3);
+  border-radius: 100px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tech-badge:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* SECTION 5 — FOOTER                                                        */
+/* ══════════════════════════════════════════════════════════════════════════ */
+footer {
+  border-top: 1px solid rgba(0,212,180,0.12);
+  padding: 32px 0;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+.footer-center {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.footer-right {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* RESPONSIVE                                                                */
+/* ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
+    text-align: center;
+  }
+  .hero-left { align-items: center; }
+  .hero-sub { max-width: 100%; }
+  .hero-right { order: -1; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-headline { font-size: 42px; }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 0 24px; }
+  .hero-headline { font-size: 34px; }
+  .hero-sub { font-size: 16px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .phone-frame { width: 260px; height: 540px; }
+  .phone-screen { width: 232px; height: 504px; }
+  .headline { font-size: 30px; }
+  .footer-inner { flex-direction: column; align-items: center; text-align: center; }
+  .screens-scroll-wrapper { padding: 20px 24px 32px; }
+}
+
+@media (max-width: 480px) {
+  .phone-frame { width: 260px; height: 540px; border-radius: 44px; }
+  .phone-screen { width: 232px; height: 504px; border-radius: 36px; }
+  .stat-pills { justify-content: center; }
+  .hero-ctas { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 — HERO                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left: Text -->
+      <div class="hero-left">
+        <div class="badge-aws">AWS 10000 AIdeas · Top 300</div>
+
+        <h1 class="hero-headline">
+          AI-Powered<br><span>Safety Intelligence</span>
+        </h1>
+
+        <p class="hero-sub">
+          Rakshak uses real-time ML risk prediction to keep women safe in Chennai.
+          Powered by AWS SageMaker, Lambda, and a Flutter mobile app.
+        </p>
+
+        <div class="hero-ctas">
+          <a href="#screenshots" class="btn-primary">View Live Demo</a>
+          <a href="#features" class="btn-secondary">See How It Works</a>
+        </div>
+
+        <div class="stat-pills">
+          <div class="stat-pill">44 Zones Covered</div>
+          <div class="stat-pill">97% Confidence</div>
+          <div class="stat-pill">Real-time Predictions</div>
+        </div>
+      </div>
+
+      <!-- Right: Phone Frame -->
+      <div class="hero-right">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <!-- Fallback (shown behind iframe) -->
+            <div class="phone-fallback">
+              <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                <path d="M28 4L8 14V28C8 39.05 16.8 49.36 28 52C39.2 49.36 48 39.05 48 28V14L28 4Z"
+                  fill="rgba(0,212,180,0.15)" stroke="#00D4B4" stroke-width="2"/>
+                <path d="M22 28L26 32L34 24" stroke="#46F1CF" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="fallback-label">Live Demo Loading…</span>
+            </div>
+            <!-- Live Flutter web app -->
+            <iframe
+              src="./flutter_web/index.html"
+              title="Rakshak Live Demo"
+              loading="lazy"
+              allow="geolocation"
+            ></iframe>
+          </div>
+        </div>
+
+        <!-- Status indicators -->
+        <div class="status-row">
+          <div class="status-dot"><span class="dot dot-green"></span>Live Backend</div>
+          <div class="status-dot"><span class="dot dot-teal"></span>AWS Lambda</div>
+          <div class="status-dot"><span class="dot dot-teal"></span>ML Active</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 — APP SCREENSHOTS                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="screenshots">
+  <div class="container">
+    <div class="section-header">
+      <span class="label-caps">App Screens</span>
+      <h2 class="headline">Every Screen. Purpose-Built.</h2>
+    </div>
+  </div>
+
+  <div class="screens-scroll-wrapper">
+    <div class="screens-row">
+
+      <!-- Screen 1: Sentinel Home -->
+      <div class="screen-card">
+        <div class="mini-phone">
+          <div class="mini-screen">
+            <div class="mini-screen-icon">
+              <!-- Shield icon -->
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <path d="M18 3L5 9V18C5 25.18 10.8 31.9 18 33.5C25.2 31.9 31 25.18 31 18V9L18 3Z"
+                  fill="rgba(0,212,180,0.15)" stroke="#00D4B4" stroke-width="1.5"/>
+              </svg>
+              <span class="mini-screen-label">Sentinel</span>
+              <!-- Mock risk score -->
+              <span style="font-size:28px;font-weight:900;color:#fff;line-height:1;position:relative;z-index:1;">72</span>
+              <span class="mini-screen-sublabel">Risk Score</span>
+            </div>
+            <!-- Mock bottom nav -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:#0E1322;display:flex;align-items:center;justify-content:space-around;z-index:2;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#46F1CF"><path d="M12 2L3 7v7c0 5.25 3.8 10.15 9 11.35C17.2 24.15 21 19.25 21 14V7L12 2Z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.3)"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.3)"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.3)"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+            <div class="mini-screen-bar" style="background:linear-gradient(90deg,#00D4B4,#46F1CF);"></div>
+          </div>
+        </div>
+        <span class="screen-card-label">Sentinel Home</span>
+      </div>
+
+      <!-- Screen 2: Safety Intelligence -->
+      <div class="screen-card">
+        <div class="mini-phone">
+          <div class="mini-screen">
+            <div class="mini-screen-icon">
+              <!-- Chart/AI icon -->
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <circle cx="18" cy="18" r="14" stroke="#00D4B4" stroke-width="1.5" fill="rgba(0,212,180,0.1)"/>
+                <path d="M10 18 A8 8 0 0 1 26 18" stroke="#46F1CF" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <circle cx="18" cy="18" r="3" fill="#46F1CF"/>
+              </svg>
+              <span class="mini-screen-label">Intelligence</span>
+              <span style="font-size:22px;font-weight:900;color:#FF3B5C;line-height:1;position:relative;z-index:1;">88</span>
+              <span class="mini-screen-sublabel">AI Analysis</span>
+            </div>
+            <div class="mini-screen-bar" style="background:#FF3B5C;"></div>
+          </div>
+        </div>
+        <span class="screen-card-label">Safety Intelligence</span>
+      </div>
+
+      <!-- Screen 3: SOS Response -->
+      <div class="screen-card">
+        <div class="mini-phone">
+          <div class="mini-screen" style="background:#93000A;">
+            <div class="mini-screen-icon">
+              <span style="font-size:48px;color:rgba(255,255,255,0.9);line-height:1;position:relative;z-index:1;font-weight:300;">*</span>
+              <span class="mini-screen-label" style="color:rgba(255,255,255,0.9);">SOS</span>
+              <span class="mini-screen-sublabel" style="color:rgba(255,255,255,0.6);">Emergency</span>
+            </div>
+            <div class="mini-screen-bar" style="background:rgba(255,255,255,0.3);"></div>
+          </div>
+        </div>
+        <span class="screen-card-label">SOS Response</span>
+      </div>
+
+      <!-- Screen 4: Night Watch -->
+      <div class="screen-card">
+        <div class="mini-phone">
+          <div class="mini-screen">
+            <div class="mini-screen-icon">
+              <!-- Moon icon -->
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <path d="M27 19.5A10.5 10.5 0 0 1 16.5 9a10.5 10.5 0 0 0 0 18A10.5 10.5 0 0 1 27 19.5Z"
+                  fill="rgba(0,212,180,0.15)" stroke="#00D4B4" stroke-width="1.5"/>
+              </svg>
+              <span class="mini-screen-label">Night Watch</span>
+              <span style="font-size:11px;font-weight:700;color:#46F1CF;letter-spacing:1px;text-transform:uppercase;position:relative;z-index:1;">Secured</span>
+            </div>
+            <div class="mini-screen-bar" style="background:linear-gradient(90deg,#00D4B4,#46F1CF);"></div>
+          </div>
+        </div>
+        <span class="screen-card-label">Night Watch</span>
+      </div>
+
+      <!-- Screen 5: User Space -->
+      <div class="screen-card">
+        <div class="mini-phone">
+          <div class="mini-screen">
+            <div class="mini-screen-icon">
+              <!-- Person icon -->
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <circle cx="18" cy="13" r="6" fill="rgba(0,212,180,0.15)" stroke="#00D4B4" stroke-width="1.5"/>
+                <path d="M6 30c0-6.627 5.373-12 12-12s12 5.373 12 12"
+                  stroke="#00D4B4" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              </svg>
+              <span class="mini-screen-label">User Space</span>
+              <span class="mini-screen-sublabel">Profile</span>
+            </div>
+            <div class="mini-screen-bar" style="background:linear-gradient(90deg,#00D4B4,#46F1CF);"></div>
+          </div>
+        </div>
+        <span class="screen-card-label">User Space</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 — FEATURES                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="label-caps">Capabilities</span>
+      <h2 class="headline">How Rakshak Protects</h2>
+    </div>
+
+    <div class="features-grid">
+
+      <!-- Card 1 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- Brain/AI SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C9.5 2 7.5 3.5 7 5.5C5.5 5.8 4 7.2 4 9C4 10.3 4.7 11.4 5.7 12C4.7 12.6 4 13.7 4 15C4 16.8 5.5 18.2 7 18.5C7.5 20.5 9.5 22 12 22C14.5 22 16.5 20.5 17 18.5C18.5 18.2 20 16.8 20 15C20 13.7 19.3 12.6 18.3 12C19.3 11.4 20 10.3 20 9C20 7.2 18.5 5.8 17 5.5C16.5 3.5 14.5 2 12 2Z"
+              stroke="#00D4B4" stroke-width="1.5" fill="none"/>
+            <circle cx="12" cy="12" r="2" fill="#46F1CF"/>
+            <path d="M12 10V8M12 16V14M10 12H8M16 12H14" stroke="#46F1CF" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="feature-title">Real-Time Risk Prediction</div>
+        <p class="feature-body">
+          ML model analyzes 17 parameters including location, time, historical incidents
+          and signal density to predict risk in real time — served via AWS SageMaker
+          and Lambda with sub-200ms latency.
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- Shield SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L4 6V12C4 16.42 7.56 20.57 12 22C16.44 20.57 20 16.42 20 12V6L12 2Z"
+              stroke="#00D4B4" stroke-width="1.5" fill="none"/>
+            <path d="M9 12L11 14L15 10" stroke="#46F1CF" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feature-title">Instant SOS Dispatch</div>
+        <p class="feature-body">
+          One tap triggers emergency contact alerts, patrol dispatch notification,
+          and live location sharing simultaneously. Night Watch mode activates
+          automatically when risk is high after 10 PM.
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <!-- Sliders SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6H20M4 12H20M4 18H20" stroke="#00D4B4" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="6" r="2" fill="#46F1CF"/>
+            <circle cx="16" cy="12" r="2" fill="#46F1CF"/>
+            <circle cx="10" cy="18" r="2" fill="#46F1CF"/>
+          </svg>
+        </div>
+        <div class="feature-title">Judge Mode Simulation</div>
+        <p class="feature-body">
+          Evaluators can simulate any time of day and Chennai pincode to see how
+          the risk engine responds — live backend, real predictions, full
+          transparency into the ML decision pipeline.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 — TECH STACK                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="tech">
+  <div class="container">
+    <div class="section-header">
+      <span class="label-caps">Infrastructure</span>
+      <h2 class="headline">Built on AWS</h2>
+      <p class="body-muted" style="max-width:520px;">
+        Every component is production-grade, serverless, and designed to scale
+        across all of Chennai's 44 monitored zones.
+      </p>
+    </div>
+
+    <div class="tech-badges">
+      <span class="tech-badge">AWS SageMaker</span>
+      <span class="tech-badge">AWS Lambda</span>
+      <span class="tech-badge">API Gateway</span>
+      <span class="tech-badge">Flutter</span>
+      <span class="tech-badge">Riverpod</span>
+      <span class="tech-badge">Python scikit-learn</span>
+      <span class="tech-badge">SHAP</span>
+      <span class="tech-badge">Chennai Open Data</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 — FOOTER                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <!-- Shield logo -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 6V12C4 16.42 7.56 20.57 12 22C16.44 20.57 20 16.42 20 12V6L12 2Z"
+            fill="rgba(0,212,180,0.2)" stroke="#00D4B4" stroke-width="1.5"/>
+          <path d="M9 12L11 14L15 10" stroke="#46F1CF" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        RAKSHAK
+      </div>
+      <div class="footer-center">Built for AWS 10000 AIdeas 2026</div>
+      <div class="footer-right">Chennai, Tamil Nadu, India</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

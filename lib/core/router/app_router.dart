@@ -1,6 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/sentinel/presentation/sentinel_screen.dart';
+import '../../features/sentinel/presentation/night_watch_overlay.dart';
 import '../../features/alerts/presentation/alerts_stub_screen.dart';
 import '../../features/map/presentation/map_stub_screen.dart';
 import '../../features/user_space/presentation/user_space_screen.dart';
@@ -8,29 +11,22 @@ import '../../features/intelligence/presentation/intelligence_screen.dart';
 import '../../features/intelligence/presentation/score_screen.dart';
 import '../../features/sos/presentation/sos_screen.dart';
 import '../widgets/rk_scaffold.dart';
+import '../widgets/judge_mode_overlay.dart';
+import '../../core/providers/settings_provider.dart';
 
 final router = GoRouter(
   initialLocation: '/',
   routes: [
-    // Login Screen (no shell)
+    // Login — no shell, no Judge Mode
     GoRoute(
       path: '/',
       builder: (context, state) => const LoginScreen(),
     ),
 
-    // Shell Route with Bottom Navigation
+    // Shell — bottom nav + Judge Mode overlay
     ShellRoute(
-      builder: (context, state, child) {
-        final currentTab = _getTabIndex(state.uri.toString());
-        return RkScaffold(
-          body: child,
-          currentIndex: currentTab,
-          onTabChanged: (index) {
-            final route = _getTabRoute(index);
-            context.go(route);
-          },
-        );
-      },
+      builder: (context, state, child) =>
+          _ShellWithJudgeMode(child: child, routerState: state),
       routes: [
         GoRoute(
           path: '/sentinel',
@@ -51,14 +47,25 @@ final router = GoRouter(
       ],
     ),
 
-    // Fullscreen Routes (no bottom nav)
+    // Fullscreen routes — Judge Mode overlay, no bottom nav
     GoRoute(
       path: '/intelligence',
-      builder: (context, state) => const IntelligenceScreen(),
+      builder: (context, state) => JudgeModeOverlay(
+        child: const IntelligenceScreen(),
+      ),
     ),
     GoRoute(
       path: '/score',
-      builder: (context, state) => const ScoreScreen(),
+      builder: (context, state) => JudgeModeOverlay(
+        child: const ScoreScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/night-watch',
+      builder: (context, state) => const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: NightWatchOverlay(),
+      ),
     ),
     GoRoute(
       path: '/sos',
@@ -67,18 +74,42 @@ final router = GoRouter(
   ],
 );
 
-int _getTabIndex(String path) {
-  if (path.contains('/sentinel')) return 0;
+// ── Shell wrapper ─────────────────────────────────────────────────────────────
+
+class _ShellWithJudgeMode extends ConsumerWidget {
+  final Widget child;
+  final GoRouterState routerState;
+
+  const _ShellWithJudgeMode(
+      {required this.child, required this.routerState});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(settingsProvider).languageCode;
+    final currentTab = _tabIndex(routerState.uri.toString());
+
+    return JudgeModeOverlay(
+      child: RkScaffold(
+        body: child,
+        currentIndex: currentTab,
+        languageCode: lang,
+        onTabChanged: (i) => GoRouter.of(context).go(_tabRoute(i)),
+      ),
+    );
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+int _tabIndex(String path) {
   if (path.contains('/alerts')) return 1;
   if (path.contains('/map')) return 2;
   if (path.contains('/user-space')) return 3;
   return 0;
 }
 
-String _getTabRoute(int index) {
-  switch (index) {
-    case 0:
-      return '/sentinel';
+String _tabRoute(int i) {
+  switch (i) {
     case 1:
       return '/alerts';
     case 2:

@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/models/risk_score.dart';
+import '../../../core/models/risk_prediction_request.dart';
 import '../data/intelligence_repository.dart';
-import '../domain/intelligence_service.dart';
 
 /// Intelligence state
 enum ScanStatus {
@@ -46,25 +46,28 @@ class IntelligenceState {
 
 /// Intelligence controller
 class IntelligenceController extends StateNotifier<IntelligenceState> {
-  final IntelligenceService _intelligenceService;
+  final IntelligenceRepository _repo;
 
-  IntelligenceController(this._intelligenceService)
-      : super(const IntelligenceState());
+  IntelligenceController(this._repo) : super(const IntelligenceState());
 
-  Future<void> scanLocation(double latitude, double longitude, {String lang = 'en'}) async {
+  /// Standard scan — uses GPS lat/lon + default pincode
+  Future<void> scanLocation(double latitude, double longitude,
+      {String lang = 'en', int pincode = 600001}) async {
     state = state.copyWith(status: ScanStatus.scanning, progress: 0.0);
 
     try {
       // Animate progress while awaiting the real HTTP call
       var progressTimer = 0.0;
-      final ticker = Stream.periodic(const Duration(milliseconds: 300), (i) => i)
-          .take(9)
-          .listen((_) {
+      final ticker =
+          Stream.periodic(const Duration(milliseconds: 300), (i) => i)
+              .take(9)
+              .listen((_) {
         progressTimer = (progressTimer + 0.1).clamp(0.0, 0.9);
         state = state.copyWith(progress: progressTimer);
       });
 
-      final result = await _intelligenceService.scanLocation(latitude, longitude);
+      final result =
+          await _repo.scanLocationWithPincode(latitude, longitude, pincode);
       await ticker.cancel();
 
       state = state.copyWith(
@@ -95,18 +98,49 @@ class IntelligenceController extends StateNotifier<IntelligenceState> {
     }
   }
 
+  /// Judge Mode scan — uses a fully custom request with hour override
+  Future<void> scanWithRequest(RiskPredictionRequest request,
+      {String lang = 'en'}) async {
+    state = state.copyWith(status: ScanStatus.scanning, progress: 0.0);
+
+    try {
+      var progressTimer = 0.0;
+      final ticker =
+          Stream.periodic(const Duration(milliseconds: 300), (i) => i)
+              .take(9)
+              .listen((_) {
+        progressTimer = (progressTimer + 0.1).clamp(0.0, 0.9);
+        state = state.copyWith(progress: progressTimer);
+      });
+
+      final result = await _repo.scanWithRequest(request);
+      await ticker.cancel();
+
+      state = state.copyWith(
+        status: ScanStatus.complete,
+        result: result,
+        progress: 1.0,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: ScanStatus.error,
+        error: AppStrings.get(AppStrings.networkError, lang),
+      );
+    }
+  }
+
   void reset() {
     state = const IntelligenceState();
   }
 }
 
-/// Intelligence service provider
-final intelligenceServiceProvider = Provider<IntelligenceService>((ref) {
+/// Intelligence repository provider (concrete type)
+final intelligenceRepositoryProvider = Provider<IntelligenceRepository>((ref) {
   return IntelligenceRepository();
 });
 
 /// Intelligence controller provider
 final intelligenceControllerProvider =
     StateNotifierProvider<IntelligenceController, IntelligenceState>((ref) {
-  return IntelligenceController(ref.watch(intelligenceServiceProvider));
+  return IntelligenceController(ref.watch(intelligenceRepositoryProvider));
 });
