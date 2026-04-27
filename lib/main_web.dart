@@ -162,9 +162,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   margin: const EdgeInsets.all(12),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +365,7 @@ class _NavItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+          color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -468,7 +468,7 @@ class _RiskMapPageState extends State<RiskMapPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.2),
+                          color: Colors.green.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
@@ -518,14 +518,14 @@ class _RiskMapPageState extends State<RiskMapPage> {
                               CircleMarker(
                                 point: const LatLng(13.0827, 80.2707),
                                 radius: 5000,
-                                color: Colors.red.withOpacity(0.3),
+                                color: Colors.red.withValues(alpha: 0.3),
                                 borderColor: Colors.red,
                                 borderStrokeWidth: 2,
                               ),
                               CircleMarker(
                                 point: const LatLng(13.1, 80.25),
                                 radius: 3000,
-                                color: Colors.orange.withOpacity(0.3),
+                                color: Colors.orange.withValues(alpha: 0.3),
                                 borderColor: Colors.orange,
                                 borderStrokeWidth: 2,
                               ),
@@ -642,7 +642,7 @@ class _AreaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -884,8 +884,8 @@ class IncidentsPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: DataTable(
-              headingRowColor: MaterialStateProperty.all(
-                Colors.blue.withOpacity(0.1),
+              headingRowColor: WidgetStateProperty.all(
+                Colors.blue.withValues(alpha: 0.1),
               ),
               columns: const [
                 DataColumn(label: Text('Time')),
@@ -928,8 +928,8 @@ class IncidentsPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: status == 'Open'
-                  ? Colors.red.withOpacity(0.2)
-                  : Colors.green.withOpacity(0.2),
+                  ? Colors.red.withValues(alpha: 0.2)
+                  : Colors.green.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

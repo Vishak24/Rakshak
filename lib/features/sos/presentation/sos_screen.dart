@@ -2,17 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/rk_button.dart';
-import '../../../core/widgets/rk_card.dart';
 import '../../../core/widgets/rk_label.dart';
 import '../../../core/widgets/rk_pulse.dart';
 import '../../../core/providers/settings_provider.dart';
 import 'sos_controller.dart';
 
+/// SOS Screen — Stitch design:
+/// Phase 1: Full screen alert red, asterisk/star, "Contacting Emergency Services..."
+/// Phase 2 (Night-Watch Secured): STATUS: SECURED, "Help is on the way", DISMISS ALERT,
+/// current time + signal strength row, PATROL DISPATCH ACTIVE badge.
 class SosScreen extends ConsumerStatefulWidget {
   const SosScreen({super.key});
 
@@ -20,247 +24,283 @@ class SosScreen extends ConsumerStatefulWidget {
   ConsumerState<SosScreen> createState() => _SosScreenState();
 }
 
-class _SosScreenState extends ConsumerState<SosScreen> {
+class _SosScreenState extends ConsumerState<SosScreen>
+    with SingleTickerProviderStateMixin {
   bool _isPhase2 = false;
   Timer? _timeTimer;
   String _currentTime = '';
+  late AnimationController _starCtrl;
+  late Animation<double> _starOpacity;
 
   @override
   void initState() {
     super.initState();
     _updateTime();
-    _timeTimer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTime());
-    
-    // Trigger SOS and auto-advance to phase 2
+    _timeTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _updateTime());
+
+    _starCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
+    _starOpacity = Tween<double>(begin: 1.0, end: 0.5).animate(
+      CurvedAnimation(parent: _starCtrl, curve: Curves.linear),
+    );
+
+    // TODO: wire to sosControllerProvider.triggerSos()
     Future.delayed(const Duration(milliseconds: 100), () {
       ref.read(sosControllerProvider.notifier).triggerSos();
     });
 
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _isPhase2 = true);
-      }
+      if (mounted) setState(() => _isPhase2 = true);
     });
   }
 
   void _updateTime() {
-    setState(() {
-      _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
-    });
+    if (mounted) {
+      setState(() {
+        _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
+      });
+    }
   }
 
   @override
   void dispose() {
     _timeTimer?.cancel();
+    _starCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // TODO: wire to settingsProvider.languageCode
     final lang = ref.watch(settingsProvider).languageCode;
+    // TODO: wire to sosControllerProvider for status
+    ref.watch(sosControllerProvider);
 
     return PopScope(
       canPop: _isPhase2,
       child: Scaffold(
-        backgroundColor: _isPhase2 ? AppColors.background : const Color(0xFFFF3B55),
+        backgroundColor:
+            _isPhase2 ? AppColors.background : AppColors.alertRed,
         body: SafeArea(
-          child: _isPhase2 ? _buildPhase2(lang) : _buildPhase1(lang),
+          child: _isPhase2
+              ? _Phase2(
+                  lang: lang,
+                  currentTime: _currentTime,
+                )
+              : _Phase1(
+                  lang: lang,
+                  starOpacity: _starOpacity,
+                ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildPhase1(String lang) {
+// ── Phase 1: Contacting ───────────────────────────────────────────────────────
+
+class _Phase1 extends StatelessWidget {
+  final String lang;
+  final Animation<double> starOpacity;
+
+  const _Phase1({required this.lang, required this.starOpacity});
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Transform.rotate(
-              angle: 0.785398, // 45 degrees in radians
-              child: const Icon(
-                Icons.add,
-                size: 96,
-                color: Colors.white,
+            // Animated asterisk — 120px, white, pulsing
+            AnimatedBuilder(
+              animation: starOpacity,
+              builder: (_, child) =>
+                  Opacity(opacity: starOpacity.value, child: child),
+              child: Text(
+                '*',
+                style: GoogleFonts.inter(
+                  fontSize: 120,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.white,
+                  height: 1.0,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
+
+            // "Contacting Emergency Services..."
             Text(
-              lang == 'en' ? 'Contacting Emergency Services...' : 'அவசர சேவைகளை தொடர்பு கொள்கிறது...',
-              style: AppText.h2.copyWith(color: Colors.white),
+              lang == 'ta'
+                  ? 'அவசர சேவைகளை தொடர்பு கொள்கிறது...'
+                  : 'Contacting Emergency Services...',
+              style: AppText.headlineSmall.copyWith(
+                color: Colors.white,
+                fontSize: 28,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
+            const SizedBox(height: AppSpacing.lg),
+
+            // RAKSHAK SENTINEL ACTIVE
+            RkLabel.small(
               'RAKSHAK SENTINEL ACTIVE',
-              style: AppText.labelMedium.copyWith(
-                color: Colors.white.withOpacity(0.8),
-              ),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildPhase2(String lang) {
+// ── Phase 2: Secured ──────────────────────────────────────────────────────────
+
+class _Phase2 extends ConsumerWidget {
+  final String lang;
+  final String currentTime;
+
+  const _Phase2({required this.lang, required this.currentTime});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenPadding,
+          vertical: AppSpacing.md),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: AppSpacing.xl),
-
-          // Status Card
-          RkCard(
-            child: Row(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
+          // ── STATUS: SECURED header ──────────────────────────────────
+          Row(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.shield,
+                      color: AppColors.accentBright, size: 36),
+                  const Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Icon(Icons.check,
+                        color: AppColors.accentBright, size: 14),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: const [
-                      Icon(
-                        Icons.shield,
-                        color: AppColors.accent,
-                        size: 32,
-                      ),
-                      Positioned(
-                        right: 8,
-                        bottom: 8,
-                        child: Icon(
-                          Icons.check_circle,
-                          color: AppColors.accent,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RkLabel.large(
-                        'STATUS: SECURED',
-                        color: AppColors.accent,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        lang == 'en' ? 'Help is on the way' : 'உதவி வந்து கொண்டிருக்கிறது',
-                        style: AppText.h3,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              RkLabel.small('STATUS: SECURED',
+                  color: AppColors.accentBright),
+            ],
           ),
-
           const SizedBox(height: AppSpacing.lg),
 
-          // Instructions
+          // ── "Help is on the way." ─────────────────────────────────
+          Text(
+            lang == 'ta'
+                ? 'உதவி வந்து கொண்டிருக்கிறது.'
+                : 'Help is on the way.',
+            style: AppText.displayLarge.copyWith(fontSize: 44),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Body text ─────────────────────────────────────────────
           Text(
             'Your location is secured. Help is on the way. Please stay in a well-lit place.',
-            style: AppText.bodyMedium,
+            style: AppText.bodyMedium
+                .copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'உங்கள் இருப்பிடம் பாதுகாப்பானது. உதவி வந்து கொண்டிருக்கிறது. வெளிச்சமான இடத்தில் இருக்கவும்.',
             style: AppText.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                color: AppColors.textTertiary, fontSize: 12),
           ),
-
           const SizedBox(height: AppSpacing.lg),
 
-          // Patrol Active
-          RkCard(
-            child: Row(
-              children: [
-                RkPulse(
-                  color: AppColors.accent,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: const BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                RkLabel.medium(
-                  lang == 'en' ? 'Patrol Active' : 'ரோந்து செயலில்',
-                  color: AppColors.accent,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Dismiss Button
-          RkButton(
-            label: lang == 'en' ? 'Dismiss Alert' : 'எச்சரிக்கையை நிராகரி',
-            isSecondary: true,
-            onPressed: () => context.go('/sentinel'),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Info Row
+          // ── PATROL DISPATCH ACTIVE ────────────────────────────────
           Row(
             children: [
-              Expanded(
-                child: RkCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RkLabel.medium('CURRENT TIME'),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _currentTime,
-                        style: AppText.h3,
-                      ),
-                    ],
+              RkPulse(
+                color: AppColors.accentBright,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accentBright,
+                    shape: BoxShape.circle,
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.sm),
+              RkLabel.small('PATROL DISPATCH ACTIVE',
+                  color: AppColors.accentBright),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // ── DISMISS ALERT ─────────────────────────────────────────
+          RkButton(
+            label: lang == 'ta' ? 'DISMISS ALERT' : 'DISMISS ALERT',
+            variant: RkButtonVariant.secondary,
+            onPressed: () {
+              ref.read(sosControllerProvider.notifier).markSecured();
+              context.go('/sentinel');
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // ── Time + Signal row ─────────────────────────────────────
+          Row(
+            children: [
               Expanded(
-                child: RkCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RkLabel.medium('SIGNAL STRENGTH'),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: List.generate(
-                          4,
-                          (index) => const Padding(
-                            padding: EdgeInsets.only(right: 2),
-                            child: Icon(
-                              Icons.signal_cellular_alt,
-                              color: AppColors.accent,
-                              size: 16,
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RkLabel.small('CURRENT TIME',
+                        color: AppColors.textSecondary),
+                    const SizedBox(height: 4),
+                    Text(
+                      currentTime,
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RkLabel.small('SIGNAL STRENGTH',
+                        color: AppColors.textSecondary),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: List.generate(
+                        4,
+                        (i) => Padding(
+                          padding: const EdgeInsets.only(right: 3),
+                          child: Icon(
+                            Icons.signal_cellular_alt,
+                            color: AppColors.accentBright,
+                            size: 18,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
     );

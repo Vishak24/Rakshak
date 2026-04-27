@@ -123,7 +123,7 @@ class HighRiskAreaTile extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: zone.assessment.displayColor.withOpacity(0.2),
+          color: zone.assessment.displayColor.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: Icon(

@@ -1,13 +1,68 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8"/>
-    <title>Rakshak</title>
-    <base href="/"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <style>body { margin: 0; background: #0A0E1A; }</style>
-  </head>
-  <body>
-    <script src="flutter_bootstrap.js" async></script>
-  </body>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Rakshak — AI Safety Intelligence Platform">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Rakshak">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rakshak Sentinel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      overflow: hidden;
+    }
+
+    #flutter-target {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="flutter-target"></div>
+
+  <script src="flutter_bootstrap.js"></script>
+  <script>
+    window.addEventListener("load", function () {
+      var target = document.getElementById("flutter-target");
+
+      // Flutter 3.22+ API
+      if (window._flutter && _flutter.loader && _flutter.loader.load) {
+        _flutter.loader.load({
+          serviceWorkerSettings: {
+            serviceWorkerVersion: "{{flutter_service_worker_version}}",
+          },
+          onEntrypointLoaded: async function (engineInitializer) {
+            var appRunner = await engineInitializer.initializeEngine({
+              hostElement: target,
+            });
+            await appRunner.runApp();
+          },
+        });
+
+      // Flutter 3.10–3.21 API
+      } else if (window._flutter && _flutter.loader && _flutter.loader.loadEntrypoint) {
+        _flutter.loader.loadEntrypoint({
+          serviceWorker: {
+            serviceWorkerVersion: "{{flutter_service_worker_version}}",
+          },
+          onEntrypointLoaded: async function (engineInitializer) {
+            var appRunner = await engineInitializer.initializeEngine({
+              hostElement: target,
+            });
+            await appRunner.runApp();
+          },
+        });
+      }
+    });
+  </script>
+</body>
 </html>

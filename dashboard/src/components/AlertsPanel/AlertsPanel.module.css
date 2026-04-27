@@ -1,0 +1,207 @@
+.panel {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hdr {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  background: rgba(255, 59, 92, 0.12);
+  border: 1px solid rgba(255, 59, 92, 0.22);
+  border-radius: 4px;
+  color: var(--danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.empty {
+  padding: 24px 12px;
+  font-size: 12px;
+  color: var(--dim);
+  text-align: center;
+}
+
+/* Event card */
+.evt {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 11px;
+  transition: border-color 0.18s;
+}
+
+.evt:hover {
+  border-color: var(--border2);
+}
+
+.fresh {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.evtTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.evtLoc {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.riskBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.riskBadge.high {
+  background: rgba(255, 59, 92, 0.14);
+  color: var(--danger);
+  border: 1px solid rgba(255, 59, 92, 0.25);
+}
+
+.riskBadge.medium {
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.riskBadge.low {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--safe);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.evtBot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.evtTime {
+  font-size: 10px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.pill.dispatched {
+  background: var(--accent);
+  color: #080D1A;
+}
+
+.pill.resolving {
+  background: transparent;
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.pill.resolved {
+  background: transparent;
+  color: var(--safe);
+  border: 1px solid var(--safe);
+}
+
+/* Skeleton */
+.skeletonCard {
+  opacity: 0.5;
+}
+
+.skeletonLine {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border2) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.viewAllBtn {
+  flex-shrink: 0;
+  margin: 0 7px 8px;
+  padding: 7px 12px;
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.viewAllBtn:hover {
+  background: rgba(0, 212, 180, 0.06);
+  border-color: var(--accent);
+}

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../theme/app_text.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_spacing.dart';
 
-/// Rakshak Status Chip Widget
-/// Small rectangular chip with colored background
+/// Rakshak Status Chip — Stitch spec
+/// Rectangular, radius 2px.
+/// Subtle bg: 10% opacity of status color.
+/// High-contrast text. No icon circles.
 class RkStatusChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -18,27 +21,25 @@ class RkStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm / 2), // 2px
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 14, color: color),
+            Icon(icon, size: 12, color: color),
             const SizedBox(width: 4),
           ],
           Text(
-            label,
-            style: AppText.labelSmall.copyWith(
+            label.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
               color: color,
-              fontWeight: FontWeight.w600,
+              letterSpacing: 0.8,
             ),
           ),
         ],
