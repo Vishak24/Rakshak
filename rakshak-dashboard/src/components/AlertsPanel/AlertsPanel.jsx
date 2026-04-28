@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import s from './AlertsPanel.module.css'
 import { ENDPOINTS } from '../../config/api'
 
@@ -10,98 +10,29 @@ function timeAgo(ts) {
 }
 
 /**
- * AlertsPanel
- * Props:
- *   events             — SOS event array from useSosEvents
- *   total              — cumulative SOS count
- *   lang               — 'en' | 'ta'
- *   onSosDispatched    — (sosLocation) => unitName | null
- *   onIncidentResolved — (incidentData) => void  — called when event → resolving/resolved
+ * AlertsPanel — renders only live SOS events from useSosEvents.
+ * No simulation, no mock entries.
+ * Shows "No active SOS alerts" when the feed is empty.
  */
-export default function AlertsPanel({ events, total, lang, onSosDispatched, onIncidentResolved }) {
-  const [toast, setToast]       = useState(null)
-  const prevEventsRef           = useRef([])
-  const toastTimerRef           = useRef(null)
-  const resolvedEmittedRef      = useRef(new Set()) // track which ids we've already emitted
+export default function AlertsPanel({ events, total, lang, onEventStatusChange }) {
+  const [toast, setToast]         = useState(null)
+  const [localStatus, setLocalStatus] = useState({}) // sos_id → overridden status
+  const toastTimerRef             = useRef(null)
 
-  // ── Auto-dispatch new events + emit resolved incidents ────────────────────
-  useEffect(() => {
-    const prev = prevEventsRef.current
-
-    events.forEach(ev => {
-      const wasNew = !prev.find(p => p.id === ev.id)
-
-      // Dispatch on brand-new event
-      if (wasNew && onSosDispatched) {
-        const loc = ev.lat != null && ev.lng != null
-          ? { lat: ev.lat, lng: ev.lng }
-          : { lat: 13.0827 + Math.random() * 0.05, lng: 80.2707 + Math.random() * 0.05 }
-        const unitName = onSosDispatched(loc)
-        if (unitName) showToast(`${unitName} dispatched to ${ev.name}`)
-
-        // Fire-and-forget backend dispatch if we have a real sos_id
-        if (ev.sos_id) {
-          fetch(ENDPOINTS.sosDispatch(ev.sos_id), {
-            method: 'POST',
-            signal: AbortSignal.timeout(8000),
-          }).catch(() => {})
-        }
-      }
-
-      // Emit incident data when status becomes resolving or resolved (once per event)
-      if (
-        (ev.status === 'resolving' || ev.status === 'resolved') &&
-        !resolvedEmittedRef.current.has(ev.id) &&
-        onIncidentResolved
-      ) {
-        resolvedEmittedRef.current.add(ev.id)
-
-        // Fire-and-forget backend resolve if we have a real sos_id
-        if (ev.sos_id && ev.status === 'resolved') {
-          fetch(ENDPOINTS.sosResolve(ev.sos_id), {
-            method: 'PATCH',
-            signal: AbortSignal.timeout(8000),
-          }).catch(() => {})
-        }
-        const now  = new Date()
-        const hour = now.getHours()
-        const dow  = now.getDay()
-        const s7   = Math.floor(Math.random() * 20) + 1
-        const s30  = Math.floor(Math.random() * 60) + 10
-        onIncidentResolved({
-          pincode:                   ev.pincode  ?? 600001,
-          latitude:                  ev.lat      ?? 13.0827,
-          longitude:                 ev.lng      ?? 80.2707,
-          hour,
-          day_of_week:               dow,
-          is_weekend:                (dow === 0 || dow === 6) ? 1 : 0,
-          is_night:                  (hour >= 22 || hour <= 5) ? 1 : 0,
-          is_evening:                (hour >= 17 && hour <= 21) ? 1 : 0,
-          is_rush_hour:              [8, 9, 17, 18, 19].includes(hour) ? 1 : 0,
-          reporting_delay_minutes:   Math.floor(Math.random() * 20) + 2,
-          response_time_minutes:     Math.floor(Math.random() * 15) + 3,
-          victim_age:                Math.floor(Math.random() * 30) + 18,
-          signal_count_last_7d:      s7,
-          signal_count_last_30d:     s30,
-          signal_density_ratio:      parseFloat((s7 / s30).toFixed(2)),
-          area_encoded:              Math.floor(Math.random() * 15),
-          neighborhood_encoded:      Math.floor(Math.random() * 20),
-          approvalStatus:            'pending',
-        })
-      }
-    })
-
-    prevEventsRef.current = events
-  }, [events, onSosDispatched, onIncidentResolved])
-
-  // ── Manual dispatch on click ──────────────────────────────────────────────
-  const handleClick = (ev) => {
-    if (!onSosDispatched) return
-    const loc = ev.lat != null && ev.lng != null
-      ? { lat: ev.lat, lng: ev.lng }
-      : { lat: 13.0827 + Math.random() * 0.05, lng: 80.2707 + Math.random() * 0.05 }
-    const unitName = onSosDispatched(loc)
-    if (unitName) showToast(`${unitName} dispatched to ${ev.name}`)
+  const handleDispatch = async (ev) => {
+    if (!ev.sos_id) return
+    try {
+      await fetch(ENDPOINTS.sosDispatch(ev.sos_id), {
+        method: 'POST',
+        signal: AbortSignal.timeout(8000),
+      })
+      // Immediately reflect dispatched/en-route status in the UI
+      setLocalStatus(prev => ({ ...prev, [ev.sos_id]: 'resolving' }))
+      showToast(`Dispatched to ${ev.name}`)
+      if (onEventStatusChange) onEventStatusChange(ev.sos_id, 'resolving')
+    } catch {
+      showToast(`Dispatch failed`)
+    }
   }
 
   const showToast = (msg) => {
@@ -123,7 +54,6 @@ export default function AlertsPanel({ events, total, lang, onSosDispatched, onIn
         <span className={s.badge}>{total ?? 0}</span>
       </div>
 
-      {/* Dispatch toast */}
       {toast && (
         <div key={toast.id} className={s.toast}>
           🚔 {toast.msg}
@@ -133,15 +63,18 @@ export default function AlertsPanel({ events, total, lang, onSosDispatched, onIn
       <div className={s.list}>
         {events.length === 0 && (
           <div style={{ color: 'var(--dim)', fontSize: 12, textAlign: 'center', marginTop: 24 }}>
-            Waiting for events…
+            No active SOS alerts
           </div>
         )}
-        {events.map((ev, i) => (
+        {events.map((ev, i) => {
+          const effectiveStatus = localStatus[ev.sos_id] ?? ev.status
+          return (
           <div
             key={ev.id}
             className={`${s.evt}${i === 0 ? ' ' + s.fresh : ''}`}
-            onClick={() => handleClick(ev)}
-            title="Click to dispatch nearest patrol"
+            onClick={() => handleDispatch(ev)}
+            title={ev.sos_id ? 'Click to dispatch' : ''}
+            style={{ cursor: ev.sos_id ? 'pointer' : 'default' }}
           >
             <div className={s.evtTop}>
               <span className={s.evtLoc}>{ev.name}</span>
@@ -149,16 +82,15 @@ export default function AlertsPanel({ events, total, lang, onSosDispatched, onIn
             </div>
             <div className={s.evtBot}>
               <span className={s.evtTime}>{timeAgo(ev.ts)}</span>
-              <span className={`${s.pill} ${s[ev.status]}`}>
-                {ev.status === 'resolved'
-                  ? 'Resolved'
-                  : ev.status === 'resolving'
-                  ? 'Resolving'
-                  : 'Dispatched'}
+              <span className={`${s.pill} ${s[effectiveStatus]}`}>
+                {effectiveStatus === 'resolved'  ? 'Resolved'
+               : effectiveStatus === 'resolving' ? '🚔 En Route'
+               : 'Active'}
               </span>
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </aside>
   )

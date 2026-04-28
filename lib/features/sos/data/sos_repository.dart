@@ -11,7 +11,7 @@ class SosRepository implements SosService {
   String? _activeSosId;
 
   @override
-  Future<bool> triggerSos() async {
+  Future<bool> triggerSos({int? pincode}) async {
     double lat = 13.0827;
     double lng  = 80.2707;
 
@@ -31,16 +31,21 @@ class SosRepository implements SosService {
     } catch (_) {}
 
     try {
+      final body = <String, dynamic>{
+        'latitude':   lat,
+        'longitude':  lng,
+        'risk_level': 'HIGH',
+        'status':     'active',
+      };
+      // Include judge-mode pincode if provided so police app and dashboard
+      // show the correct zone for this SOS.
+      if (pincode != null) body['pincode'] = pincode.toString();
+
       final res = await http
           .post(
             Uri.parse(api.sosLive),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'latitude':   lat,
-              'longitude':  lng,
-              'risk_level': 'HIGH',
-              'status':     'active',
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 8));
 

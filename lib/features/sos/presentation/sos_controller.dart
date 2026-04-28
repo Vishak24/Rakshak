@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/sos_repository.dart';
 import '../domain/sos_service.dart';
+import '../../../core/widgets/judge_mode_overlay.dart';
+import '../../sentinel/presentation/sentinel_controller.dart';
 
 /// SOS state
 enum SosStatus {
@@ -38,14 +40,23 @@ class SosState {
 /// SOS controller
 class SosController extends StateNotifier<SosState> {
   final SosService _sosService;
+  final Ref _ref;
 
-  SosController(this._sosService) : super(const SosState());
+  SosController(this._sosService, this._ref) : super(const SosState());
 
   Future<void> triggerSos() async {
     state = state.copyWith(status: SosStatus.triggering);
 
+    // Judge mode pincode takes priority; fall back to sentinel GPS-derived pincode
+    final judgePin = _ref.read(judgePincodeProvider);
+    int? pincode = judgePin;
+    if (pincode == null) {
+      final sentinelPin = _ref.read(sentinelControllerProvider).pincode;
+      if (sentinelPin > 0) pincode = sentinelPin;
+    }
+
     try {
-      final success = await _sosService.triggerSos();
+      final success = await _sosService.triggerSos(pincode: pincode);
       if (success) {
         final statusData = await _sosService.getSosStatus();
         state = state.copyWith(
@@ -91,5 +102,5 @@ final sosServiceProvider = Provider<SosService>((ref) {
 /// SOS controller provider
 final sosControllerProvider =
     StateNotifierProvider<SosController, SosState>((ref) {
-  return SosController(ref.watch(sosServiceProvider));
+  return SosController(ref.watch(sosServiceProvider), ref);
 });

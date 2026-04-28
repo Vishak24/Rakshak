@@ -211,6 +211,10 @@ class _JudgePanelState extends ConsumerState<_JudgePanel> {
           .read(intelligenceControllerProvider.notifier)
           .scanWithRequest(request);
 
+      // Sync the judge-mode pincode into sentinel state so the rest of the
+      // system (SOS flow, police app, dashboard) sees the selected pincode.
+      ref.read(sentinelControllerProvider.notifier).overridePincode(pincode);
+
       // Also refresh the sentinel home screen score
       ref.read(sentinelControllerProvider.notifier).loadRiskScore();
     } catch (_) {
