@@ -51,6 +51,54 @@ class ApiService {
     return [];
   }
 
+  // ── Monitor screen — night mode citizens ─────────────────────────────────
+  static Future<Map<String, dynamic>> fetchCitizensActive() async {
+    try {
+      final res = await http
+          .get(Uri.parse('${api.citizensActive}?after_hour=22'))
+          .timeout(_timeout);
+      if (res.statusCode == 200) return jsonDecode(res.body);
+    } catch (_) {}
+    return {};
+  }
+
+  // ── Route screen — optimised route to SOS ────────────────────────────────
+  static Future<Map<String, dynamic>> fetchRoute({
+    required double fromLat, required double fromLng,
+    required double toLat,   required double toLng,
+    required String sosId,
+  }) async {
+    try {
+      final uri = Uri.parse(api.policeRoute).replace(queryParameters: {
+        'from_lat': '$fromLat', 'from_lng': '$fromLng',
+        'to_lat':   '$toLat',   'to_lng':   '$toLng',
+        'sos_id':   sosId,
+      });
+      final res = await http.get(uri).timeout(_timeout);
+      if (res.statusCode == 200) return jsonDecode(res.body);
+    } catch (_) {}
+    return {};
+  }
+
+  // ── Map screen — live SOS with officer location ───────────────────────────
+  static Future<List<SosAlert>> fetchActiveSos({
+    double officerLat = 13.0827,
+    double officerLng = 80.2707,
+  }) async {
+    try {
+      final uri = Uri.parse(api.sosActive).replace(queryParameters: {
+        'officer_lat': '$officerLat',
+        'officer_lng': '$officerLng',
+      });
+      final res = await http.get(uri).timeout(_timeout);
+      if (res.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(res.body);
+        return data.map((e) => SosAlert.fromJson(e as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
+    return SosAlert.mockAlerts();
+  }
+
   // ── Score Refresh ─────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> refreshScores(List<Map<String, dynamic>> zones) async {
     try {
@@ -66,5 +114,21 @@ class ApiService {
       }
     } catch (_) {}
     return {};
+  }
+
+  // ── Patrol Optimizer ──────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> fetchPatrolOptimizedRoutes({
+    required List<Map<String, dynamic>> zones,
+    required List<Map<String, dynamic>> patrols,
+  }) async {
+    final response = await http.post(
+      Uri.parse(api.patrolOptimizer),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'zones': zones, 'patrols': patrols}),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Patrol optimizer failed: ${response.statusCode}');
   }
 }

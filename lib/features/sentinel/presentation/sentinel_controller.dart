@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+// geocoding is not supported on web — imported conditionally at runtime
+import 'package:geocoding/geocoding.dart'
+    if (dart.library.html) '../../../core/stubs/geocoding_stub.dart';
 import '../../../core/models/risk_score.dart';
 import '../data/sentinel_repository.dart';
 
@@ -93,18 +96,20 @@ class SentinelController extends StateNotifier<SentinelState> {
       // Reverse geocode to get pincode + area name
       int pincode = 600001;
       String areaName = 'Chennai';
-      try {
-        final placemarks = await placemarkFromCoordinates(lat, lng)
-            .timeout(const Duration(seconds: 5));
-        if (placemarks.isNotEmpty) {
-          final pm = placemarks.first;
-          pincode = int.tryParse(pm.postalCode ?? '') ?? 600001;
-          areaName = pm.subLocality?.isNotEmpty == true
-              ? pm.subLocality!
-              : pm.locality ?? 'Chennai';
+      if (!kIsWeb) {
+        try {
+          final placemarks = await placemarkFromCoordinates(lat, lng)
+              .timeout(const Duration(seconds: 5));
+          if (placemarks.isNotEmpty) {
+            final pm = placemarks.first;
+            pincode = int.tryParse(pm.postalCode ?? '') ?? 600001;
+            areaName = pm.subLocality?.isNotEmpty == true
+                ? pm.subLocality!
+                : pm.locality ?? 'Chennai';
+          }
+        } catch (_) {
+          // Geocoding failed — keep defaults
         }
-      } catch (_) {
-        // Geocoding failed — keep defaults
       }
 
       // Update repository + state

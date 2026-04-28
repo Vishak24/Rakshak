@@ -104,8 +104,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   static const _textPri = Color(0xFFf0f6fc);
   static const _textMut = Color(0xFF8b949e);
 
-  // Top 5 priority zones — fetched sequentially to respect Nominatim rate limit
-  static const Map<String, String> _priorityZones = {
+  // Zone risk — seeded with defaults, updated every 60s from /score/refresh
+  Map<String, String> _zoneRisk = {
     '600017': 'HIGH',
     '600081': 'HIGH',
     '600006': 'MEDIUM',
@@ -113,12 +113,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     '600058': 'LOW',
   };
 
+  // Cached polygon ring geometry per pincode (avoids re-fetching Nominatim)
+  final Map<String, List<List<LatLng>>> _polygonRings = {};
+
   int _tab = 0;
   LatLng _officerPos = const LatLng(13.0827, 80.2707);
   List<SosAlert> _alerts    = [];
   List<Polygon>  _kmlPolygons = [];
   bool _zonesLoading = true;
   Timer? _pollTimer;
+  Timer? _riskTimer;
   late AnimationController _pulseCtrl;
   late Animation<double>   _pulseAnim;
   final MapController _mapController = MapController();
@@ -136,6 +140,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     _loadZones();
     _pollSos();
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _pollSos());
+    // Refresh zone risk scores every 60 seconds from /score/refresh
+    _riskTimer = Timer.periodic(const Duration(seconds: 60), (_) => _refreshRisk());
   }
 
   Future<void> _initLocation() async {
@@ -145,23 +151,86 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   Future<void> _loadZones() async {
     final all = <Polygon>[];
-    for (final entry in _priorityZones.entries) {
+    for (final entry in _zoneRisk.entries) {
       final polys = await fetchPincodePolygon(entry.key, entry.value);
       all.addAll(polys);
+      // Cache ring geometry so we can recolor without re-fetching Nominatim
+      _polygonRings[entry.key] = polys.map((p) => p.points).toList();
       // Nominatim rate limit: 1 req/sec
       await Future.delayed(const Duration(milliseconds: 300));
     }
     if (mounted) setState(() { _kmlPolygons = all; _zonesLoading = false; });
   }
 
+  /// Poll /score/refresh every 60s and recolor zones if risk levels change.
+  Future<void> _refreshRisk() async {
+    final zones = _zoneRisk.keys.map((code) => {
+      'pincode': code,
+      'hour': DateTime.now().hour,
+      'day_of_week': DateTime.now().weekday % 7,
+    }).toList();
+
+    final result = await ApiService.refreshScores(zones);
+    if (result.isEmpty || !mounted) return;
+
+    final raw = result['results'] ?? result['zones'] ?? result;
+    if (raw is! List) return;
+
+    bool changed = false;
+    for (final r in raw) {
+      final code  = r['pincode']?.toString() ?? '';
+      final level = (r['risk_level'] ?? r['riskLevel'])?.toString().toUpperCase() ?? '';
+      if (code.isNotEmpty && level.isNotEmpty && _zoneRisk[code] != level) {
+        _zoneRisk[code] = level;
+        changed = true;
+      }
+    }
+
+    if (changed) _rebuildPolygons();
+  }
+
+  /// Rebuild Polygon objects from cached ring geometry with updated risk colors.
+  void _rebuildPolygons() {
+    final all = <Polygon>[];
+    for (final entry in _polygonRings.entries) {
+      final risk        = _zoneRisk[entry.key] ?? 'LOW';
+      final fillColor   = risk == 'HIGH'
+          ? const Color(0xFFef4444).withValues(alpha: 0.40)
+          : risk == 'MEDIUM'
+              ? const Color(0xFFf59e0b).withValues(alpha: 0.35)
+              : const Color(0xFF22c55e).withValues(alpha: 0.25);
+      final borderColor = risk == 'HIGH'
+          ? const Color(0xFFef4444)
+          : risk == 'MEDIUM'
+              ? const Color(0xFFf59e0b)
+              : const Color(0xFF22c55e);
+      for (final points in entry.value) {
+        if (points.length >= 3) {
+          all.add(Polygon(
+            points:            points,
+            color:             fillColor,
+            borderColor:       borderColor,
+            borderStrokeWidth: 1.5,
+            isFilled:          true,
+          ));
+        }
+      }
+    }
+    if (mounted) setState(() => _kmlPolygons = all);
+  }
+
   Future<void> _pollSos() async {
-    final alerts = await ApiService.fetchLiveSos();
+    final alerts = await ApiService.fetchActiveSos(
+      officerLat: _officerPos.latitude,
+      officerLng: _officerPos.longitude,
+    );
     if (mounted) setState(() => _alerts = alerts);
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _riskTimer?.cancel();
     _pulseCtrl.dispose();
     super.dispose();
   }

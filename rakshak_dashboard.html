@@ -1482,7 +1482,7 @@
     ];
 
     // ═══ PATROL UNITS ═══
-    const patrolUnits = [
+    let patrolUnits = [
       { id: 'P-01', vehicle: 'TN-01-PA-1234', officers: ['SI Priya Kumari (TN-2341)', 'Const. Rajan M (TN-4892)'],    zone: 'Parrys',         status: 'patrolling', contact: '+91-44-2345-6701', routeIdx: 0, wayptIdx: 0, wayptProgress: 0 },
       { id: 'P-02', vehicle: 'TN-01-PA-1235', officers: ['SI Meena Devi (TN-2342)', 'Const. Selvam K (TN-4893)'],     zone: 'Royapuram',      status: 'patrolling', contact: '+91-44-2345-6702', routeIdx: 0, wayptIdx: 1, wayptProgress: 0 },
       { id: 'P-03', vehicle: 'TN-01-PA-1236', officers: ['SI Kavitha R (TN-2343)', 'Const. Murugan S (TN-4894)'],     zone: 'Perambur',       status: 'patrolling', contact: '+91-44-2345-6703', routeIdx: 1, wayptIdx: 0, wayptProgress: 0 },
@@ -1564,6 +1564,14 @@
       fetchAll();
       setInterval(fetchAll, 60000);
       setInterval(tickResponseTime, 12000);
+
+      // Fetch live zone risks from /score/refresh on boot, then every 60s
+      fetchZoneRisks();
+      setInterval(fetchZoneRisks, 60000);
+
+      // Fetch live patrol data from /patrols on boot, then every 30s
+      fetchPatrols();
+      setInterval(fetchPatrols, 30000);
 
       // Ensure patrol sidebar and overview panel reflect initial state immediately
       setTimeout(() => { updatePatrolSidebar(); renderCityOverview(); }, 200);
@@ -1881,6 +1889,72 @@
       }
     }
 
+    // ═══ SCORE REFRESH — bulk risk fetch from /score/refresh ═══
+    const SCORE_REFRESH_URL = 'https://aksdwfbnn5.execute-api.ap-south-1.amazonaws.com/score/refresh';
+
+    async function fetchZoneRisks() {
+      const now = new Date();
+      const hour = now.getHours();
+      const dow  = now.getDay();
+
+      const payload = {
+        zones: ZONES.map(z => ({
+          pincode:     z.c,
+          hour,
+          day_of_week: dow,
+          units:       1
+        }))
+      };
+
+      try {
+        const res = await fetch(SCORE_REFRESH_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('score/refresh HTTP ' + res.status);
+
+        const data = await res.json();
+        // data is an array: [{ pincode, safe_score, risk_level }, ...]
+        const byPin = {};
+        data.forEach(item => { byPin[String(item.pincode)] = item; });
+
+        ZONES.forEach(z => {
+          const item = byPin[z.c];
+          if (!item) return;
+
+          // Normalise risk_level: API returns 'LOW'/'MEDIUM'/'HIGH'
+          const rl = (item.risk_level || '').toUpperCase();
+          const mapped = rl === 'HIGH' ? 'HIGH' : rl === 'MEDIUM' ? 'MEDIUM' : 'LOW';
+
+          // Update the zone's static fallback value
+          z.r = mapped;
+
+          // Merge into apiData so all existing rendering paths pick it up
+          const safeScore = typeof item.safe_score === 'number' ? item.safe_score : 0.5;
+          // safe_score is 0–1 where higher = safer, so riskIndex = 1 - safe_score
+          const riskIndex = Math.max(0, Math.min(1, 1 - safeScore));
+          apiData[z.c] = {
+            riskLevel:  mapped,
+            riskIndex,
+            confidence: 0.80
+          };
+        });
+
+        // Re-render everything that depends on risk levels
+        updateHeatmap();
+        updateHighRiskCount();
+        updatePincodeStyles();
+        const pc = document.getElementById('panel-content');
+        if (pc && pc.querySelector('[data-overview]')) renderCityOverview();
+
+        console.log('[Rakshak] score/refresh updated', data.length, 'zones');
+      } catch (err) {
+        // Silent fallback — existing hardcoded z.r values remain unchanged
+        console.warn('[Rakshak] score/refresh failed (using fallback):', err.message);
+      }
+    }
+
     // ═══ LAMBDA API ═══
     async function fetchAll() {
       const now = new Date();
@@ -2040,6 +2114,72 @@
 
 
     // ═══ PATROL VEHICLES ═══
+    // ═══ PATROL API — live fetch from /patrols ═══
+    const PATROLS_URL = 'https://aksdwfbnn5.execute-api.ap-south-1.amazonaws.com/patrols';
+
+    // Normalise a status string from the API to the values the UI expects
+    function normaliseStatus(raw) {
+      const s = (raw || '').toLowerCase().replace(/[_\s]+/g, ' ').trim();
+      if (s === 'responding' || s === 'at scene' || s === 'atscene') return s === 'atscene' ? 'at scene' : s;
+      return 'patrolling'; // default
+    }
+
+    async function fetchPatrols() {
+      try {
+        const res = await fetch(PATROLS_URL);
+        if (!res.ok) throw new Error('patrols HTTP ' + res.status);
+        const data = await res.json(); // array of patrol objects
+
+        data.forEach((item, idx) => {
+          // Map API fields → internal structure
+          // API fields: patrol_id, officer, zone, status, vehicle (from task4_seed.py)
+          const id      = item.patrol_id || item.id || ('P-' + String(idx + 1).padStart(2, '0'));
+          const vehicle = item.vehicle   || item.vehicle_number || 'TN-01-PA-XXXX';
+          const zone    = item.zone      || item.zone_name      || 'Chennai';
+          const status  = normaliseStatus(item.status);
+          // officer may be a string or array
+          const officers = Array.isArray(item.officers)
+            ? item.officers
+            : item.officer
+              ? [item.officer]
+              : ['Officer (Unknown)'];
+          const contact = item.contact || '';
+
+          // Find existing unit to preserve routing fields (routeIdx, wayptIdx, wayptProgress)
+          const existing = patrolUnits.find(u => u.id === id);
+
+          if (existing) {
+            // Update mutable fields in-place — routing fields stay intact
+            existing.vehicle  = vehicle;
+            existing.zone     = zone;
+            existing.officers = officers;
+            existing.contact  = contact;
+            // Update status in both the unit and live patrolState
+            existing.status = status;
+            if (patrolState[id]) {
+              patrolState[id].status = status;
+              // Refresh the marker icon to reflect new status colour
+              if (patrolState[id].marker) {
+                patrolState[id].marker.setIcon(makePatrolIcon(id, status));
+              }
+            }
+          } else {
+            // New unit from API not in hardcoded list — add with default routing
+            const routeIdx    = idx % ROAD_WAYPOINTS.length;
+            const wayptIdx    = 0;
+            const wayptProgress = 0;
+            patrolUnits.push({ id, vehicle, officers, zone, status, contact, routeIdx, wayptIdx, wayptProgress });
+          }
+        });
+
+        updatePatrolSidebar();
+        console.log('[Rakshak] patrols updated:', data.length, 'units');
+      } catch (err) {
+        // Silent fallback — hardcoded patrolUnits remain unchanged
+        console.warn('[Rakshak] patrols fetch failed (using fallback):', err.message);
+      }
+    }
+
     function initPatrols() {
       patrolLayer = L.layerGroup().addTo(map);
 

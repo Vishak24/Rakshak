@@ -592,6 +592,9 @@ p.section-sub{font-size:1.05rem;color:var(--text-muted);max-width:48ch;line-heig
   transition:transform .15s,box-shadow .2s;text-decoration:none;
 }
 .demo-wip-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,158,11,0.2)}
+.demo-load-btn-teal{background:var(--teal);color:#003830}
+.demo-load-btn-teal:hover{box-shadow:0 8px 32px rgba(6,182,212,0.3)}
+button.demo-load-btn:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shadow:none!important}
 
 /* ── MOBILE SCREENS ── */
 #screens .screens-heading-wrap{text-align:center;margin-bottom:3rem}
@@ -886,7 +889,7 @@ footer{
       <span>Safety Intelligence</span><br>
       for Chennai
     </h1>
-    <p class="hero-sub">Real-time ML risk prediction across 44 zones. Live patrol dispatch. One-tap SOS. Built for Chennai Police — powered by AWS.</p>
+    <p class="hero-sub">End-to-end live safety loop across 44 Chennai zones. Real risk prediction, instant SOS dispatch, live police routing, zone monitoring — fully connected on AWS, fully operational today.</p>
     <div class="hero-actions">
       <a href="https://rakshak-sentinel-app.netlify.app" target="_blank" rel="noopener noreferrer" class="btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -903,8 +906,8 @@ footer{
         <span class="hero-stat-label">Zones Monitored</span>
       </div>
       <div class="hero-stat">
-        <span class="hero-stat-num">20</span>
-        <span class="hero-stat-label">Active Patrols</span>
+        <span class="hero-stat-num">10</span>
+        <span class="hero-stat-label">Live API Routes</span>
       </div>
       <div class="hero-stat">
         <span class="hero-stat-num">92%</span>
@@ -985,8 +988,8 @@ footer{
   <div class="container">
     <div class="how-heading-wrap">
       <span class="section-label">Architecture</span>
-      <h2 class="section-heading" id="how-heading">Three systems. One unified response.</h2>
-      <p class="section-sub" style="margin:0 auto">From citizen SOS to patrol dispatch in under 6 minutes — every layer connected, every decision AI-informed.</p>
+      <h2 class="section-heading" id="how-heading">Three live apps. One closed loop.</h2>
+      <p class="section-sub" style="margin:0 auto">Risk prediction → citizen awareness → SOS dispatch → police routing → zone monitoring. Every layer live, every decision backed by the same AWS backend.</p>
     </div>
     <div class="how-steps">
       <div class="how-step reveal">
@@ -994,12 +997,12 @@ footer{
         <div class="step-icon step-icon-red">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
-        <div class="step-title">Citizen SOS</div>
-        <p class="step-desc">One tap triggers simultaneous emergency contact alerts, live GPS location share, and nearest patrol unit notification. Night Watch mode activates automatically when ML risk crosses threshold after 10 PM.</p>
+        <div class="step-title">User App</div>
+        <p class="step-desc">Live risk score auto-refreshes every 60 seconds for the user's pincode via the SageMaker endpoint. One-tap SOS POSTs GPS coordinates to the live /sos/live API — instantly visible to every police officer on duty. Night Watch activates automatically after 10 PM.</p>
         <div class="step-tags">
-          <span class="step-tag">Flutter</span>
-          <span class="step-tag">GPS</span>
-          <span class="step-tag">Push</span>
+          <span class="step-tag">Live Risk API · 60s</span>
+          <span class="step-tag">SOS → /sos/live</span>
+          <span class="step-tag">Real GPS</span>
         </div>
       </div>
       <div class="how-connector" aria-hidden="true"></div>
@@ -1008,12 +1011,12 @@ footer{
         <div class="step-icon step-icon-amber">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         </div>
-        <div class="step-title">AI Risk Analysis</div>
-        <p class="step-desc">AWS SageMaker endpoint processes 17 features — pincode, time-of-day, historical incident density, signal strength, proximity to transit. SHAP provides interpretable risk attribution. Sub-200ms inference.</p>
+        <div class="step-title">Police App</div>
+        <p class="step-desc">On-duty officers see a live SOS feed polled every 10 seconds from /police/sos/active, filtered by real GPS proximity. The /police/route API returns destination area, distance, ETA, and a Google Maps link per SOS. Zone risk colors refresh every 60 seconds. AI patrol deployment via /patrol/optimize.</p>
         <div class="step-tags">
-          <span class="step-tag">SageMaker</span>
-          <span class="step-tag">Lambda</span>
-          <span class="step-tag">SHAP</span>
+          <span class="step-tag">SOS Poll · 10s</span>
+          <span class="step-tag">Route + ETA API</span>
+          <span class="step-tag">Zone Risk · 60s</span>
         </div>
       </div>
       <div class="how-connector" aria-hidden="true"></div>
@@ -1022,12 +1025,12 @@ footer{
         <div class="step-icon step-icon-teal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
         </div>
-        <div class="step-title">Patrol Dispatch</div>
-        <p class="step-desc">20 patrol units routed via OSRM on real Chennai road network. Command center sees live positions, zone risk overlays, and SOS feed simultaneously. Officer tactical app receives AI-optimised waypoints.</p>
+        <div class="step-title">SHO Dashboard</div>
+        <p class="step-desc">All 44 Chennai zones colour-coded by live ML risk scores refreshed every 60 seconds from /score/refresh. Live SOS feed polled every 10 seconds. Patrol positions and statuses synced every 30 seconds from /patrols. Citizens active by pincode after 22:00 pulled live from /police/citizens/active.</p>
         <div class="step-tags">
-          <span class="step-tag">OSRM</span>
-          <span class="step-tag">Leaflet</span>
-          <span class="step-tag">DynamoDB</span>
+          <span class="step-tag">Zone Risk · 60s</span>
+          <span class="step-tag">SOS Feed · 10s</span>
+          <span class="step-tag">Patrols · 30s</span>
         </div>
       </div>
     </div>
@@ -1038,13 +1041,13 @@ footer{
 <section id="features" class="section" aria-labelledby="features-heading">
   <div class="container">
     <span class="section-label">Platform</span>
-    <h2 class="section-heading" id="features-heading">Command-grade intelligence. Production-ready infrastructure.</h2>
+    <h2 class="section-heading" id="features-heading">Live connected intelligence. Production AWS backend.</h2>
     <div class="bento-grid">
       <!-- Main: Dashboard -->
       <div class="bento-card bento-main reveal">
-        <div class="bento-card-label">Command Center</div>
-        <div class="bento-card-title">Real-Time Command Dashboard</div>
-        <p class="bento-card-desc">React + Leaflet map with all 44 Chennai pincodes colour-coded by live ML risk score. WebSocket real-time updates. SOS alert feed with one-click dispatch. 20 patrol units visible on real road network.</p>
+        <div class="bento-card-label">SHO Dashboard</div>
+        <div class="bento-card-title">Zone Risk, Patrols &amp; Citizens Active — All Live</div>
+        <p class="bento-card-desc">React + Leaflet heatmap with all 44 Chennai pincodes colour-coded by live ML risk scores (auto-refreshed every 60s). SOS feed polled every 10s. Patrol positions and statuses synced every 30s from the live /patrols endpoint. Citizens active by pincode after 22:00 from /police/citizens/active — zero hardcoded data.</p>
         <!-- Dashboard Mock -->
         <div class="dashboard-mock" aria-hidden="true">
           <div class="mock-map-grid"></div>
@@ -1067,16 +1070,16 @@ footer{
           <div class="mock-patrol" style="left:75%;top:40%;animation:patrol-move-a 9s ease-in-out infinite reverse"></div>
           <!-- Status bar -->
           <div class="mock-status-bar">
-            <span class="status-text"><span class="status-dot"></span>LIVE · 20 units · 2 SOS active</span>
-            <span class="status-text" style="color:var(--teal)">WS CONNECTED</span>
+            <span class="status-text"><span class="status-dot"></span>LIVE · 44 zones · 2 SOS active</span>
+            <span class="status-text" style="color:var(--teal)">API CONNECTED</span>
           </div>
         </div>
       </div>
       <!-- ML -->
       <div class="bento-card bento-ml reveal">
-        <div class="bento-card-label">Intelligence Layer</div>
-        <div class="bento-card-title">ML Risk Scoring Engine</div>
-        <p class="bento-card-desc">AWS SageMaker trained on 44 pincodes, 17 features. SHAP interpretability. 92% validation accuracy. Sub-200ms inference per request.</p>
+        <div class="bento-card-label">Risk Intelligence</div>
+        <div class="bento-card-title">Real-Time Risk Prediction</div>
+        <p class="bento-card-desc">AWS SageMaker inference across 44 pincodes, 17 features. SHAP interpretability. 92% validation accuracy. Sub-200ms response — scores refresh live on every citizen and dashboard request.</p>
         <!-- Bar chart mock -->
         <div class="ml-bars" id="ml-bars" aria-hidden="true">
           <div class="ml-bar-wrap">
@@ -1118,26 +1121,28 @@ footer{
       <div class="bento-row2">
         <div class="bento-card reveal">
           <div class="bento-card-label">Routing</div>
-          <div class="bento-card-title">Live Patrol Routing</div>
-          <p class="bento-card-desc" style="max-width:none">OSRM engine on real Chennai road network. 20 units, dynamically re-routed based on SOS events and zone risk escalation.</p>
+          <div class="bento-card-title">Patrol Routing / Optimization</div>
+          <p class="bento-card-desc" style="max-width:none">Backend returns destination area, distance, ETA, and a direct Google Maps link for each active SOS. AI deployment zone suggestions via the live patrol optimizer endpoint.</p>
           <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
-            <span class="badge-teal">OSRM</span>
-            <span class="badge-teal">Real Roads</span>
+            <span class="badge-teal">Route API</span>
+            <span class="badge-teal">Live ETA</span>
           </div>
         </div>
         <div class="bento-card reveal">
           <div class="bento-card-label">Citizen Layer</div>
-          <div class="bento-card-title">One-Tap SOS System</div>
-          <p class="bento-card-desc" style="max-width:none">Single tap triggers three simultaneous actions: emergency contact alert, live GPS share, and nearest unit dispatch notification. Night Watch auto-activates post 10 PM.</p>
+          <div class="bento-card-title">Instant SOS Dispatch</div>
+          <p class="bento-card-desc" style="max-width:none">Single tap hits the live SOS API — simultaneously alerting emergency contacts, sharing live GPS, and notifying the nearest patrol unit. Night Watch auto-activates after 10 PM based on live risk score.</p>
           <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="badge-red">Live SOS API</span>
             <span class="badge-red">Night Watch</span>
           </div>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-card-label">Officer Layer</div>
-          <div class="bento-card-title">Officer Tactical App</div>
-          <p class="bento-card-desc" style="max-width:none">Flutter app for on-duty officers. Live SOS alerts, AI-optimised patrol routes, zone risk levels, fleet status, and GO ON DUTY authentication flow.</p>
+          <div class="bento-card-label">Police Layer</div>
+          <div class="bento-card-title">Live Police Response</div>
+          <p class="bento-card-desc" style="max-width:none">Active SOS feed filtered by real officer GPS coordinates. Route-to-SOS API returns area name, distance, ETA and Google Maps link. Night Monitor screen pulls citizens active by pincode live after 22:00.</p>
           <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap">
+            <span class="badge-teal">Active SOS API</span>
             <span class="badge-teal">Flutter</span>
           </div>
         </div>
@@ -1152,8 +1157,8 @@ footer{
     <div class="tech-inner">
       <div>
         <span class="section-label">Infrastructure</span>
-        <h2 class="section-heading" id="tech-heading">Production-grade.<br>Serverless.<br>Scalable.</h2>
-        <p class="section-sub">Every component chosen for resilience under load. Zero cold-start overhead on critical SOS paths. DynamoDB streams drive real-time WebSocket updates with sub-50ms propagation.</p>
+        <h2 class="section-heading" id="tech-heading">Live.<br>Serverless.<br>Connected.</h2>
+        <p class="section-sub">4 Lambda functions, 4 DynamoDB tables, 10 API routes — all live on AWS ap-south-1. Zero cold-start overhead on critical SOS paths. DynamoDB streams drive real-time updates with sub-50ms propagation.</p>
       </div>
       <div class="tech-grid">
         <div class="tech-card reveal">
@@ -1206,22 +1211,22 @@ footer{
     <!-- Architecture flows -->
     <div class="arch-flows reveal">
       <div class="arch-flow">
-        <div class="arch-flow-title">Citizen SOS Flow</div>
-        <div class="arch-step"><span class="arch-chip">Flutter App</span><span class="arch-arrow">→</span><span class="arch-chip">API Gateway</span></div>
-        <div class="arch-step"><span class="arch-chip">Lambda</span><span class="arch-arrow">→</span><span class="arch-chip">DynamoDB</span></div>
-        <div class="arch-step"><span class="arch-chip">WS Push</span><span class="arch-arrow">→</span><span class="arch-chip">Dashboard + Officer</span></div>
+        <div class="arch-flow-title">User App Flow — Live</div>
+        <div class="arch-step"><span class="arch-chip">Flutter SOS Tap</span><span class="arch-arrow">→</span><span class="arch-chip">API Gateway</span></div>
+        <div class="arch-step"><span class="arch-chip">Lambda</span><span class="arch-arrow">→</span><span class="arch-chip">DynamoDB Write</span></div>
+        <div class="arch-step"><span class="arch-chip">Risk Refresh</span><span class="arch-arrow">→</span><span class="arch-chip">SageMaker EP</span></div>
       </div>
       <div class="arch-flow">
-        <div class="arch-flow-title">ML Inference Flow</div>
-        <div class="arch-step"><span class="arch-chip">Pincode + Time</span><span class="arch-arrow">→</span><span class="arch-chip">Lambda</span></div>
-        <div class="arch-step"><span class="arch-chip">SageMaker EP</span><span class="arch-arrow">→</span><span class="arch-chip">Risk Score</span></div>
-        <div class="arch-step"><span class="arch-chip">SHAP Values</span><span class="arch-arrow">→</span><span class="arch-chip">Interpretability</span></div>
+        <div class="arch-flow-title">Police App Flow — Live</div>
+        <div class="arch-step"><span class="arch-chip">/police/sos/active</span><span class="arch-arrow">→</span><span class="arch-chip">Officer GPS</span></div>
+        <div class="arch-step"><span class="arch-chip">/police/route</span><span class="arch-arrow">→</span><span class="arch-chip">ETA + Maps URL</span></div>
+        <div class="arch-step"><span class="arch-chip">/citizens/active</span><span class="arch-arrow">→</span><span class="arch-chip">Pincode Monitor</span></div>
       </div>
       <div class="arch-flow">
-        <div class="arch-flow-title">Dashboard Flow</div>
-        <div class="arch-step"><span class="arch-chip">React + Leaflet</span><span class="arch-arrow">→</span><span class="arch-chip">API Gateway</span></div>
-        <div class="arch-step"><span class="arch-chip">DynamoDB Streams</span><span class="arch-arrow">→</span><span class="arch-chip">WebSocket</span></div>
-        <div class="arch-step"><span class="arch-chip">OSRM Routes</span><span class="arch-arrow">→</span><span class="arch-chip">Patrol Overlay</span></div>
+        <div class="arch-flow-title">SHO Dashboard Flow — Live</div>
+        <div class="arch-step"><span class="arch-chip">React + Leaflet</span><span class="arch-arrow">→</span><span class="arch-chip">44 Zone Heatmap</span></div>
+        <div class="arch-step"><span class="arch-chip">/score/refresh</span><span class="arch-arrow">→</span><span class="arch-chip">DynamoDB Update</span></div>
+        <div class="arch-step"><span class="arch-chip">/patrols</span><span class="arch-arrow">→</span><span class="arch-chip">Patrol Status</span></div>
       </div>
     </div>
   </div>
@@ -1232,7 +1237,7 @@ footer{
   <div class="container">
     <div class="impact-heading-wrap">
       <span class="section-label">By the Numbers</span>
-      <h2 class="section-heading" id="impact-heading">Operational metrics. Real infrastructure.</h2>
+      <h2 class="section-heading" id="impact-heading">Live backend metrics. Real infrastructure.</h2>
     </div>
     <div class="metrics-grid">
       <div class="metric-card reveal">
@@ -1241,8 +1246,8 @@ footer{
         <div class="metric-accent" style="background:var(--red)"></div>
       </div>
       <div class="metric-card reveal">
-        <span class="metric-num count-up" data-target="20" style="color:var(--teal)">0</span>
-        <span class="metric-label">Active Patrol Units</span>
+        <span class="metric-num count-up" data-target="10" style="color:var(--teal)">0</span>
+        <span class="metric-label">Live API Endpoints</span>
         <div class="metric-accent" style="background:var(--teal)"></div>
       </div>
       <div class="metric-card reveal">
@@ -1267,7 +1272,7 @@ footer{
       </div>
       <div class="metric-card reveal">
         <span class="metric-num count-up" data-target="3" style="color:var(--red)">0</span>
-        <span class="metric-label">Connected Systems</span>
+        <span class="metric-label">Live Connected Apps</span>
         <div class="metric-accent" style="background:var(--red)"></div>
       </div>
       <div class="metric-card reveal">
@@ -1284,26 +1289,26 @@ footer{
   <div class="demo-inner container">
     <div class="demo-heading-wrap">
       <span class="section-label">Live System</span>
-      <h2 class="section-heading" id="demo-heading">Three platforms. One mission.</h2>
-      <p class="section-sub" style="margin:0 auto .5rem">Explore each layer of the Rakshak stack — from command intelligence to field dispatch to citizen safety.</p>
+      <h2 class="section-heading" id="demo-heading">Three live apps. One connected loop.</h2>
+      <p class="section-sub" style="margin:0 auto .5rem">Every platform is wired to the same AWS backend. Citizen SOS flows to police dispatch, which flows to dashboard intelligence — a real, closed safety loop operating on live data.</p>
     </div>
     <div class="reveal">
       <!-- Tab bar -->
       <div class="demo-tabs" role="tablist">
         <button class="demo-tab active" role="tab" aria-selected="true" aria-controls="tab-panel-dashboard" onclick="switchTab('dashboard',this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Command Dashboard
+          Dashboard Demo
           <span class="demo-tab-badge demo-tab-badge-live">LIVE</span>
         </button>
         <button class="demo-tab" role="tab" aria-selected="false" aria-controls="tab-panel-citizen" onclick="switchTab('citizen',this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Citizen SOS App
+          User App Demo
           <span class="demo-tab-badge demo-tab-badge-live">LIVE</span>
         </button>
         <button class="demo-tab" role="tab" aria-selected="false" aria-controls="tab-panel-officer" onclick="switchTab('officer',this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-          Officer Tactical App
-          <span class="demo-tab-badge demo-tab-badge-wip">IN PROGRESS</span>
+          Police App Demo
+          <span class="demo-tab-badge demo-tab-badge-live">LIVE</span>
         </button>
       </div>
 
@@ -1341,7 +1346,7 @@ footer{
         </div>
       </div>
 
-      <!-- Panel: Citizen SOS App -->
+      <!-- Panel: User App Demo -->
       <div class="demo-panel" id="tab-panel-citizen" role="tabpanel">
         <div class="browser-chrome">
           <div class="browser-toolbar">
@@ -1352,34 +1357,24 @@ footer{
             </div>
             <div class="browser-urlbar">
               <svg class="browser-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span class="browser-url">Rakshak — Citizen Safety App</span>
+              <span class="browser-url" id="user-app-urlbar">Rakshak User App · Live Risk &amp; SOS</span>
             </div>
           </div>
           <div class="browser-body">
-            <div class="demo-cta-panel">
+            <div class="demo-overlay" id="user-app-overlay">
               <div style="width:52px;height:52px;border-radius:10px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;color:var(--red)">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-              <div>
-                <div style="font-size:1.05rem;font-weight:700;margin-bottom:.35rem">Citizen SOS App</div>
-                <div style="font-size:.85rem;color:var(--text-muted);max-width:40ch;line-height:1.6;text-align:center">Flutter app — one-tap SOS, Night Watch mode, live GPS share. Available for download.</div>
-              </div>
-              <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center">
-                <a href="#screens" class="btn-primary">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                  View App Screens
-                </a>
-                <span style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--green);padding:.55rem 1rem;border:1px solid rgba(34,197,94,0.25);border-radius:6px;background:var(--green-dim)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  Flutter · Available for Download
-                </span>
-              </div>
+              <div class="demo-overlay-title">User App — Live</div>
+              <div id="user-app-btn-wrap"></div>
+              <p style="font-size:.75rem;color:var(--text-dim);max-width:34ch;text-align:center;line-height:1.5">Live risk score &middot; instant SOS dispatch &middot; Night Watch mode</p>
             </div>
           </div>
         </div>
+        <div style="text-align:center;margin-top:1.25rem" id="user-app-tab-foot"></div>
       </div>
 
-      <!-- Panel: Officer Tactical App -->
+      <!-- Panel: Police App Demo -->
       <div class="demo-panel" id="tab-panel-officer" role="tabpanel">
         <div class="browser-chrome">
           <div class="browser-toolbar">
@@ -1389,24 +1384,22 @@ footer{
               <div class="browser-dot browser-dot-green"></div>
             </div>
             <div class="browser-urlbar">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--amber);flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span class="browser-url">Officer Tactical App — In Active Development</span>
+              <svg class="browser-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span class="browser-url" id="police-app-urlbar">Rakshak Police App · Live Backend</span>
             </div>
           </div>
           <div class="browser-body">
-            <div class="demo-wip-card">
-              <div class="demo-wip-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div class="demo-overlay" id="police-app-overlay">
+              <div style="width:52px;height:52px;border-radius:10px;background:var(--teal-dim);border:1px solid rgba(6,182,212,0.3);display:flex;align-items:center;justify-content:center;color:var(--teal)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
               </div>
-              <div class="demo-wip-title">Officer App — In Active Development</div>
-              <div class="demo-wip-sub">Patrol routing, SOS response, fleet dispatch. GO ON DUTY authentication flow. Launching soon.</div>
-              <a href="#screens" class="demo-wip-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                Follow Progress
-              </a>
+              <div class="demo-overlay-title">Police App — Live</div>
+              <div id="police-app-btn-wrap"></div>
+              <p style="font-size:.75rem;color:var(--text-dim);max-width:34ch;text-align:center;line-height:1.5">Active SOS feed &middot; route guidance &middot; Night Monitor</p>
             </div>
           </div>
         </div>
+        <div style="text-align:center;margin-top:1.25rem" id="police-app-tab-foot"></div>
       </div>
     </div>
   </div>
@@ -1416,9 +1409,9 @@ footer{
 <section id="screens" class="section" aria-labelledby="screens-heading" style="background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
   <div class="container">
     <div class="screens-heading-wrap">
-      <span class="section-label">Mobile Apps</span>
-      <h2 class="section-heading" id="screens-heading">Field-grade UX. No training required.</h2>
-      <p class="section-sub" style="margin:0 auto">Officer tactical app and citizen SOS — both built in Flutter. Screens reflect production UI state.</p>
+      <span class="section-label">Live Apps</span>
+      <h2 class="section-heading" id="screens-heading">Three apps. Field-grade UX.</h2>
+      <p class="section-sub" style="margin:0 auto">Citizen app, police app, and SHO dashboard — all connected to the live AWS backend. Screens reflect production state.</p>
     </div>
     <div class="phone-frames">
 
@@ -1554,8 +1547,8 @@ footer{
         </div>
         <div class="phone-body">
           <div class="p4-header">
-            <div class="p4-title">Command Monitor</div>
-            <div class="p4-sub">Unresolved Journeys · Live</div>
+            <div class="p4-title">Night Monitor</div>
+            <div class="p4-sub">Citizens Active by Pincode · Live API</div>
           </div>
           <div class="p4-body">
             <div class="p4-zone" style="border-left-color:var(--red)">
@@ -1624,7 +1617,7 @@ footer{
         </div>
         <div>
           <div class="aws-comp-title">AWS 10000 AIdeas Competition — Top 50 Globally</div>
-          <div class="aws-comp-body">Selected Top 50 globally out of thousands worldwide. Targeting Top 20.</div>
+          <div class="aws-comp-body">Selected Top 50 globally. Full stack deployed to AWS ap-south-1 — live and ready for judging.</div>
         </div>
       </div>
     </div>
@@ -1740,15 +1733,70 @@ function loadDashboard(){
   io.observe(bars);
 })();
 
-// ── Lucide icons ──
-document.addEventListener('DOMContentLoaded',()=>{
-  if(window.lucide)lucide.createIcons();
-});
-
 // ── prefers-reduced-motion guard ──
 if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
   document.getElementById('hero-canvas').style.display='none';
 }
+
+// ── Demo URL constants — paste deployed URLs here ──
+const RAKSHAK_URLS = {
+  dashboard: 'https://rakshak-sentinel-app.netlify.app',
+  userApp:   '',   // ← add deployed User App URL when available
+  policeApp: '',   // ← add deployed Police App URL when available
+};
+
+// ── external link SVG ──
+const _extIcon = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+
+function _buildDemoPanel(opts) {
+  const {btnWrapId, footId, urlbarId, url, btnLabel, btnClass, footLabel} = opts;
+  const wrap = document.getElementById(btnWrapId);
+  const foot = document.getElementById(footId);
+  const bar  = document.getElementById(urlbarId);
+
+  if (url) {
+    // Update URL bar to show the actual host
+    if (bar) {
+      try { bar.textContent = new URL(url).host; } catch(_) {}
+    }
+    // Main action button
+    if (wrap) wrap.innerHTML =
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="demo-load-btn ${btnClass||''}">${_extIcon} ${btnLabel}</a>`;
+    // "Open in Full Tab" below chrome
+    if (foot) foot.innerHTML =
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:inline-flex">${footLabel} ${_extIcon}</a>`;
+  } else {
+    // No URL yet — disabled state
+    if (wrap) wrap.innerHTML =
+      `<button class="demo-load-btn" disabled>Coming Soon</button>`;
+    if (foot) foot.innerHTML =
+      `<span class="btn-outline" style="display:inline-flex;opacity:.35;cursor:not-allowed;pointer-events:none">${footLabel} ${_extIcon}</span>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+
+  _buildDemoPanel({
+    btnWrapId: 'user-app-btn-wrap',
+    footId:    'user-app-tab-foot',
+    urlbarId:  'user-app-urlbar',
+    url:       RAKSHAK_URLS.userApp,
+    btnLabel:  'Open Live User App',
+    btnClass:  '',
+    footLabel: 'Open in Full Tab',
+  });
+
+  _buildDemoPanel({
+    btnWrapId: 'police-app-btn-wrap',
+    footId:    'police-app-tab-foot',
+    urlbarId:  'police-app-urlbar',
+    url:       RAKSHAK_URLS.policeApp,
+    btnLabel:  'Open Live Police App',
+    btnClass:  'demo-load-btn-teal',
+    footLabel: 'Open in Full Tab',
+  });
+});
 </script>
 </body>
 </html>

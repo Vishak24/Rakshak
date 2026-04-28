@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { PATROL_ROUTES, findNearestPatrol, haversineDistance } from '../utils/patrolSimulation'
 import { fetchRoadRoute } from '../utils/fetchRoadRoute'
+import { ENDPOINTS } from '../config/api'
 
 const TICK_MS       = 100       // 100ms → smooth continuous motion
 const STEP          = 0.000025  // degrees per tick — slowed down for realism
@@ -132,6 +133,44 @@ export function usePatrolSimulation() {
 
     return () => clearInterval(id)
   }, [routesReady])
+
+  // ── Sync backend /patrols statuses every 30s ─────────────────────────────
+  useEffect(() => {
+    const syncStatuses = async () => {
+      try {
+        const res = await fetch(ENDPOINTS.patrolsList, {
+          signal: AbortSignal.timeout(8000),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const livePatrols = await res.json()
+        if (!Array.isArray(livePatrols) || livePatrols.length === 0) return
+
+        setPatrolStates(prev => {
+          const updated = [...prev]
+          livePatrols.forEach((lp, i) => {
+            if (i >= updated.length) return
+            // Don't override an actively simulated Responding/AtScene state
+            const sim = updated[i]
+            if (sim.status === 'Responding' || sim.status === 'AtScene') return
+            const raw = (lp.status ?? '').toLowerCase()
+            const mapped = raw === 'responding' ? 'Responding'
+              : raw === 'at_scene' || raw === 'at scene' ? 'AtScene'
+              : 'Patrolling'
+            if (sim.status !== mapped) {
+              updated[i] = { ...sim, status: mapped }
+            }
+          })
+          return updated
+        })
+      } catch {
+        // Backend unavailable — simulation continues unaffected
+      }
+    }
+
+    syncStatuses()
+    const id = setInterval(syncStatuses, 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   // ── Dispatch nearest patrol to SOS location ───────────────────────────────
   const dispatchPatrol = useCallback((sosLocation) => {

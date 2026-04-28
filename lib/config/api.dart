@@ -6,3 +6,8 @@ const String sosResolve  = '$apiBase/sos/resolve';
 const String patrolsList = '$apiBase/patrols';
 const String patrolStatus = '$apiBase/patrols';
 const String scoreRefresh = '$apiBase/score/refresh';
+const String patrolOptimizer = '$apiBase/patrol/optimize';
+
+const String citizensActive = '$apiBase/police/citizens/active';
+const String policeRoute    = '$apiBase/police/route';
+const String sosActive      = '$apiBase/police/sos/active';

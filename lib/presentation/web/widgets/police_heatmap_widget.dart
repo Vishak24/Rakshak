@@ -1,47 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../domain/models/zone_risk.dart';
 import '../../../domain/providers/heatmap_data_provider.dart';
 import '../../../domain/providers/patrol_manager_provider.dart';
 import '../../../shared/constants.dart';
 
-class PoliceHeatmapWidget extends ConsumerStatefulWidget {
+class PoliceHeatmapWidget extends ConsumerWidget {
   const PoliceHeatmapWidget({super.key});
 
   @override
-  ConsumerState<PoliceHeatmapWidget> createState() =>
-      _PoliceHeatmapWidgetState();
-}
-
-class _PoliceHeatmapWidgetState extends ConsumerState<PoliceHeatmapWidget> {
-  GoogleMapController? _mapController;
-  Set<Circle> _circles = {};
-  Set<Marker> _markers = {};
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final heatmapDataAsync = ref.watch(heatmapDataProvider);
     final patrolRecords = ref.watch(patrolManagerProvider);
 
     return heatmapDataAsync.when(
-      data: (zones) {
-        _updateHeatmapOverlays(zones, patrolRecords);
-
-        return GoogleMap(
-          initialCameraPosition: const CameraPosition(
-            target: LatLng(MapConstants.chennaiLat, MapConstants.chennaiLng),
-            zoom: MapConstants.defaultZoom,
-          ),
-          onMapCreated: (controller) {
-            _mapController = controller;
-          },
-          circles: _circles,
-          markers: _markers,
-          zoomControlsEnabled: true,
-          compassEnabled: true,
-        );
-      },
+      data: (zones) => _HeatmapMap(zones: zones, patrolRecords: patrolRecords),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
         child: Column(
@@ -60,19 +35,16 @@ class _PoliceHeatmapWidgetState extends ConsumerState<PoliceHeatmapWidget> {
       ),
     );
   }
+}
 
-  void _updateHeatmapOverlays(
-    List<ZoneRisk> zones,
-    Map<String, DateTime> patrolRecords,
-  ) {
-    final circles = <Circle>{};
-    final markers = <Marker>{};
+class _HeatmapMap extends StatelessWidget {
+  final List<ZoneRisk> zones;
+  final Map<String, DateTime> patrolRecords;
 
-    for (final zone in zones) {
-      final latLng = LatLng(zone.latitude, zone.longitude);
-      final isPatrolled = patrolRecords.containsKey(zone.zoneId);
+  const _HeatmapMap({required this.zones, required this.patrolRecords});
 
-      // Determine weight/opacity based on risk level
+  List<CircleMarker> _buildCircles() {
+    return zones.map((zone) {
       double weight;
       switch (zone.assessment.riskLevel) {
         case 'High':
@@ -88,49 +60,58 @@ class _PoliceHeatmapWidgetState extends ConsumerState<PoliceHeatmapWidget> {
           weight = 0.1;
       }
 
-      // Create circle for each zone
-      circles.add(
-        Circle(
-          circleId: CircleId(zone.zoneId),
-          center: latLng,
-          radius: MapConstants.heatmapRadius * 10, // Scale for visibility
-          fillColor: zone.assessment.displayColor
-              .withValues(alpha: MapConstants.heatmapOpacity * weight),
-          strokeColor: zone.assessment.displayColor,
-          strokeWidth: 1,
+      return CircleMarker(
+        point: LatLng(zone.latitude, zone.longitude),
+        radius: MapConstants.heatmapRadius,
+        useRadiusInMeter: true,
+        color: zone.assessment.displayColor
+            .withValues(alpha: MapConstants.heatmapOpacity * weight),
+        borderColor: zone.assessment.displayColor,
+        borderStrokeWidth: 1.0,
+      );
+    }).toList();
+  }
+
+  List<Marker> _buildMarkers() {
+    return zones.where((z) => z.isHighRisk).map((zone) {
+      final isPatrolled = patrolRecords.containsKey(zone.zoneId);
+      return Marker(
+        point: LatLng(zone.latitude, zone.longitude),
+        width: 36,
+        height: 36,
+        child: Tooltip(
+          message:
+              '${zone.assessment.riskLevel} — ${(zone.assessment.confidence * 100).toStringAsFixed(0)}% confidence',
+          child: Icon(
+            Icons.location_on,
+            color: isPatrolled ? Colors.green : Colors.red,
+            size: 32,
+          ),
         ),
       );
-
-      // Add marker for high-risk zones
-      if (zone.isHighRisk) {
-        markers.add(
-          Marker(
-            markerId: MarkerId(zone.zoneId),
-            position: latLng,
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              isPatrolled
-                  ? BitmapDescriptor.hueGreen
-                  : BitmapDescriptor.hueRed,
-            ),
-            infoWindow: InfoWindow(
-              title: zone.assessment.riskLevel,
-              snippet:
-                  '${(zone.assessment.confidence * 100).toStringAsFixed(0)}% confidence',
-            ),
-          ),
-        );
-      }
-    }
-
-    setState(() {
-      _circles = circles;
-      _markers = markers;
-    });
+    }).toList();
   }
 
   @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return FlutterMap(
+      options: const MapOptions(
+        initialCenter:
+            LatLng(MapConstants.chennaiLat, MapConstants.chennaiLng),
+        initialZoom: MapConstants.defaultZoom,
+        minZoom: 9.0,
+        maxZoom: 16.0,
+        backgroundColor: Color(0xFF0d1117),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate:
+              'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+          userAgentPackageName: 'com.rakshak.app',
+        ),
+        CircleLayer(circles: _buildCircles()),
+        MarkerLayer(markers: _buildMarkers()),
+      ],
+    );
   }
 }

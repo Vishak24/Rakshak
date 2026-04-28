@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart' show launchUrl, LaunchMode;
 import '../models/sos_alert.dart';
 import '../models/zone.dart';
+import '../services/api_service.dart';
 import '../utils/kml_parser.dart';
 
 class OptimisedRouteScreen extends StatefulWidget {
@@ -37,11 +38,104 @@ class _OptimisedRouteScreenState extends State<OptimisedRouteScreen> {
   String _eta = '—';
   late Future<List<Polygon>> _kmlZonesFuture;
 
+  // Backend route data
+  String? _backendArea;
+  double? _backendDistKm;
+  int?    _backendEtaMins;
+  String? _backendMapsUrl;
+
+  // Patrol optimizer data
+  List<Map<String, dynamic>> _deploymentZones = [];
+  bool _optimizerLoading = false;
+
   @override
   void initState() {
     super.initState();
     _kmlZonesFuture = loadKmlZones();
     _buildRoute();
+    _fetchBackendRoute();
+    _fetchPatrolOptimizer();
+  }
+
+  Future<void> _fetchPatrolOptimizer() async {
+    setState(() => _optimizerLoading = true);
+
+    // Build zone payload from high/medium risk zones
+    final zones = Zone.chennaiZones
+        .where((z) => z.riskLevel == 'HIGH' || z.riskLevel == 'MEDIUM')
+        .map((z) => {
+              'pincode': z.pincode,
+              'name': z.name,
+              'lat': z.lat,
+              'lng': z.lng,
+              'risk_level': z.riskLevel,
+            })
+        .toList();
+
+    // Build patrol payload from current alerts as proxy for active patrols
+    final patrols = widget.alerts
+        .where((a) => a.lat != null && a.lng != null)
+        .map((a) => {
+              'id': a.id,
+              'lat': a.lat,
+              'lng': a.lng,
+              'status': a.status,
+            })
+        .toList();
+
+    try {
+      final data = await ApiService.fetchPatrolOptimizedRoutes(
+        zones: zones,
+        patrols: patrols,
+      );
+
+      // Response may contain deployment_zones, suggested_zones, zones, or assignments
+      final raw = data['deployment_zones']
+          ?? data['suggested_zones']
+          ?? data['zones']
+          ?? data['assignments']
+          ?? [];
+
+      if (mounted && raw is List) {
+        setState(() {
+          _deploymentZones = raw
+              .whereType<Map<String, dynamic>>()
+              .toList();
+        });
+      }
+    } catch (_) {
+      // Optimizer endpoint not yet live — fail silently
+    } finally {
+      if (mounted) setState(() => _optimizerLoading = false);
+    }
+  }
+
+  Future<void> _fetchBackendRoute() async {
+    final primary = widget.alerts.firstWhere(
+      (a) => a.lat != null && a.lng != null,
+      orElse: () => SosAlert(id: '', zoneName: '', riskLevel: '', timestamp: DateTime.now(), status: ''),
+    );
+    if (primary.lat == null) return;
+
+    final sosId = primary.sosId ?? primary.id;
+    if (sosId.isEmpty) return;
+
+    final data = await ApiService.fetchRoute(
+      fromLat: widget.officerPos.latitude,
+      fromLng: widget.officerPos.longitude,
+      toLat:   primary.lat!,
+      toLng:   primary.lng!,
+      sosId:   sosId,
+    );
+
+    if (mounted && data.isNotEmpty) {
+      setState(() {
+        _backendArea    = data['destination_area']?.toString();
+        _backendDistKm  = (data['distance_km'] as num?)?.toDouble();
+        _backendEtaMins = (data['eta_minutes'] as num?)?.toInt();
+        _backendMapsUrl = data['google_maps_url']?.toString();
+      });
+    }
   }
 
   List<LatLng> _greedyOrder(LatLng start, List<LatLng> targets) {
@@ -150,6 +244,12 @@ class _OptimisedRouteScreenState extends State<OptimisedRouteScreen> {
   }
 
   Future<void> _startNavigation() async {
+    if (_backendMapsUrl != null && _backendMapsUrl!.isNotEmpty) {
+      try {
+        await launchUrl(Uri.parse(_backendMapsUrl!), mode: LaunchMode.externalApplication);
+        return;
+      } catch (_) {}
+    }
     if (_stops.isEmpty) return;
     final waypoints = _stops
         .map((s) => (s['point'] as LatLng))
@@ -203,6 +303,23 @@ class _OptimisedRouteScreenState extends State<OptimisedRouteScreen> {
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF00d4b4)))
           : Column(
               children: [
+                // Destination area (backend)
+                if (_backendArea != null)
+                  Container(
+                    color: _surface,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: _teal, size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Destination: $_backendArea',
+                          style: const TextStyle(color: _textMut, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // Distance + ETA bar
                 Container(
                   color: _surface,
@@ -213,7 +330,8 @@ class _OptimisedRouteScreenState extends State<OptimisedRouteScreen> {
                       const Icon(Icons.route, color: _teal, size: 16),
                       const SizedBox(width: 6),
                       Text(
-                        '$_totalDist TOTAL  ·  $_eta ETA',
+                        '${_backendDistKm != null ? '${_backendDistKm!.toStringAsFixed(1)} KM' : _totalDist} TOTAL  ·  '
+                        '${_backendEtaMins != null ? '$_backendEtaMins MIN ETA' : '$_eta ETA'}',
                         style: const TextStyle(
                           color: _textPri,
                           fontSize: 13,
@@ -338,6 +456,123 @@ class _OptimisedRouteScreenState extends State<OptimisedRouteScreen> {
                     },
                   ),
                 ),
+
+                // Deployment zones from patrol optimizer
+                if (_optimizerLoading || _deploymentZones.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    decoration: BoxDecoration(
+                      color: _surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _teal.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.auto_awesome, color: _teal, size: 14),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'AI DEPLOYMENT SUGGESTIONS',
+                                style: TextStyle(
+                                  color: _teal,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_optimizerLoading)
+                                const SizedBox(
+                                  width: 12, height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: _teal,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (_deploymentZones.isEmpty && !_optimizerLoading)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(14, 0, 14, 12),
+                            child: Text(
+                              'No suggestions available',
+                              style: TextStyle(color: _textMut, fontSize: 12),
+                            ),
+                          ),
+                        ..._deploymentZones.map((zone) {
+                          final name     = zone['name']?.toString()
+                              ?? zone['zone_name']?.toString()
+                              ?? zone['pincode']?.toString()
+                              ?? 'Zone';
+                          final priority = zone['priority']?.toString()
+                              ?? zone['risk_level']?.toString()
+                              ?? zone['risk']?.toString()
+                              ?? '';
+                          final reason   = zone['reason']?.toString()
+                              ?? zone['rationale']?.toString()
+                              ?? '';
+                          final color    = _riskColor(priority);
+                          return Container(
+                            margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: color.withValues(alpha: 0.25)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.place, color: color, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          color: _textPri,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      if (reason.isNotEmpty)
+                                        Text(
+                                          reason,
+                                          style: const TextStyle(color: _textMut, fontSize: 11),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (priority.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      priority.toUpperCase(),
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
 
                 // Start navigation button
                 Padding(
