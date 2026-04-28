@@ -2,20 +2,31 @@ import { useState, useEffect, useRef } from 'react'
 import { ENDPOINTS } from '../config/api'
 import { ZONES } from '../constants/zones'
 
+// Build a pincode → area name lookup from ZONES
+const _pincodeToName = {}
+ZONES.forEach(z => { _pincodeToName[z.c] = z.n })
+
+// Resolve a raw zone_name/pincode string to a human-readable area name.
+// If zone_name looks like a pincode (all digits), look it up; otherwise use as-is.
+function resolveZoneName(zone_name, pincode) {
+  const raw = zone_name ?? pincode ?? null
+  if (!raw) return 'Unknown Zone'
+  const str = String(raw).trim()
+  // If it's a 6-digit pincode, look up the area name
+  if (/^\d{6}$/.test(str)) return _pincodeToName[str] ? `${_pincodeToName[str]} (${str})` : str
+  return str
+}
+
 /**
- * Combines a live SOS feed (polled from backend every 10s) with a
- * simulated local event generator so the panel is never empty.
- * Returns { events, total }
+ * Polls /sos/live every 10s.
+ * Returns only real API items — no simulation, no fallback mock entries.
+ * If the API returns empty, events = [] and the panel shows "No active SOS alerts".
  */
-export function useSosEvents(apiData) {
+export function useSosEvents() {
   const [events, setEvents] = useState([])
   const [total,  setTotal]  = useState(0)
-  const apiDataRef    = useRef(apiData)
-  const seenIdsRef    = useRef(new Set())   // backend sos_ids already merged
+  const seenIdsRef = useRef(new Set())
 
-  useEffect(() => { apiDataRef.current = apiData }, [apiData])
-
-  // ── Poll backend SOS feed every 10s ──────────────────────────────────────
   useEffect(() => {
     const pollSos = async () => {
       try {
@@ -24,79 +35,49 @@ export function useSosEvents(apiData) {
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const items = await res.json()
-        if (!Array.isArray(items) || items.length === 0) return
+        if (!Array.isArray(items)) return
 
         const newEvs = items
           .filter(item => !seenIdsRef.current.has(item.sos_id))
           .map(item => {
             seenIdsRef.current.add(item.sos_id)
             return {
-              id:     item.sos_id,
-              name:   item.zone_name ?? item.pincode ?? 'Unknown Zone',
-              risk:   item.risk_level ?? 'HIGH',
-              ts:     new Date(item.created_at ?? Date.now()),
-              status: item.status === 'resolved' ? 'resolved'
-                    : item.status === 'dispatched' ? 'resolving'
-                    : 'dispatched',
-              lat:    item.latitude  ?? null,
-              lng:    item.longitude ?? null,
-              pincode: item.pincode  ?? null,
-              sos_id: item.sos_id,
+              id:      item.sos_id,
+              name:    resolveZoneName(item.zone_name, item.pincode),
+              risk:    (item.risk_level ?? 'HIGH').toUpperCase(),
+              ts:      new Date(item.created_at ?? Date.now()),
+              status:  item.status === 'resolved'   ? 'resolved'
+                     : item.status === 'dispatched' ? 'resolving'
+                     : 'dispatched',
+              lat:     item.lat ?? item.latitude  ?? null,
+              lng:     item.lng ?? item.longitude ?? null,
+              pincode: item.pincode ?? null,
+              sos_id:  item.sos_id,
             }
           })
 
         if (newEvs.length > 0) {
-          setEvents(prev => [...newEvs, ...prev].slice(0, 8))
+          setEvents(prev => [...newEvs, ...prev].slice(0, 20))
           setTotal(t => t + newEvs.length)
         }
+
+        // Also update status of existing events from the full list
+        setEvents(prev => prev.map(ev => {
+          const live = items.find(i => i.sos_id === ev.sos_id)
+          if (!live) return ev
+          const status = live.status === 'resolved'   ? 'resolved'
+                       : live.status === 'dispatched' ? 'resolving'
+                       : 'dispatched'
+          return { ...ev, status }
+        }))
       } catch {
-        // Backend unavailable — silently keep simulated events
+        // Backend unavailable — keep current events, don't add mocks
       }
     }
 
     pollSos()
-    const pollId = setInterval(pollSos, 10_000)
-    return () => clearInterval(pollId)
-  }, [])
-
-  // ── Local simulation — keeps the feed alive when backend is quiet ─────────
-  useEffect(() => {
-    const generate = () => {
-      const pool = ZONES.filter(z => z.r === 'HIGH' || z.r === 'MEDIUM')
-      if (!pool.length) return
-      const z    = pool[Math.floor(Math.random() * pool.length)]
-      const risk = apiDataRef.current?.get(z.c)?.riskLevel ?? z.r
-      const id   = `sim-${Date.now()}-${Math.floor(Math.random() * 900 + 1)}`
-      const ev   = {
-        id, name: z.n, risk, ts: new Date(), status: 'dispatched',
-        lat: z.lat, lng: z.lon, pincode: z.c, sos_id: null,
-      }
-
-      setEvents(prev => [ev, ...prev].slice(0, 8))
-      setTotal(t => t + 1)
-
-      // dispatched → resolving → resolved
-      setTimeout(() => {
-        setEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'resolving' } : e))
-        setTimeout(() => {
-          setEvents(prev => prev.map(e => e.id === id ? { ...e, status: 'resolved' } : e))
-        }, 20_000 + Math.random() * 10_000)
-      }, 15_000 + Math.random() * 10_000)
-    }
-
-    generate()
-    const t1 = setTimeout(generate, 600)
-    const loop = () => {
-      const delay = 8_000 + Math.random() * 4_000
-      const t = setTimeout(() => { generate(); loop() }, delay)
-      return t
-    }
-    const loopTimer = loop()
-
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(loopTimer)
-    }
+    const id = setInterval(pollSos, 10_000)
+    return () => clearInterval(id)
   }, [])
 
   return { events, total }

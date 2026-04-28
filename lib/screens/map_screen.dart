@@ -738,9 +738,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   Widget _buildResponseTab() {
     final incident  = _activeIncident;
+    // When an incident is active, use its pincode as the current zone.
+    // Otherwise fall back to GPS-derived nearest pincode.
     final nearest   = _nearestPincodes(_officerPos, count: 2);
-    final curPin    = nearest.isNotEmpty ? nearest[0] : '—';
-    final nearbyPin = nearest.length > 1 ? nearest[1] : '—';
+    final curPin    = incident?.pincode ?? (nearest.isNotEmpty ? nearest[0] : '—');
+    final nearbyPin = nearest.isNotEmpty
+        ? (incident?.pincode != null && nearest[0] == incident!.pincode
+            ? (nearest.length > 1 ? nearest[1] : '—')
+            : nearest[0])
+        : '—';
     final curRisk   = _zoneRisk[curPin] ?? 'UNKNOWN';
     final activeSos = _alerts.where((a) => a.status != 'resolved').length;
 
