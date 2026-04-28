@@ -18,7 +18,7 @@ class ApiService {
         return data.map((e) => SosAlert.fromJson(e as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
-    return SosAlert.mockAlerts();
+    return [];   // no mock fallback — empty means no live alerts
   }
 
   static Future<void> dispatchSos(String sosId) async {
@@ -35,6 +35,22 @@ class ApiService {
           .patch(Uri.parse('${api.sosResolve}/$sosId'))
           .timeout(_timeout);
     } catch (_) {}
+  }
+
+  /// Accept a SOS alert — PATCH /police/sos/{id}/status with status=dispatched
+  static Future<bool> acceptSos(String sosId) async {
+    try {
+      final res = await http
+          .patch(
+            Uri.parse('${api.policeSosAccept}/$sosId/status'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'status': 'dispatched'}),
+          )
+          .timeout(_timeout);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ── Patrols ───────────────────────────────────────────────────────────────
@@ -80,7 +96,7 @@ class ApiService {
     return {};
   }
 
-  // ── Map screen — live SOS with officer location ───────────────────────────
+  // ── Map screen — live SOS from /police/sos/active ────────────────────────
   static Future<List<SosAlert>> fetchActiveSos({
     double officerLat = 13.0827,
     double officerLng = 80.2707,
@@ -96,7 +112,7 @@ class ApiService {
         return data.map((e) => SosAlert.fromJson(e as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
-    return SosAlert.mockAlerts();
+    return [];   // no mock fallback
   }
 
   // ── Score Refresh ─────────────────────────────────────────────────────────

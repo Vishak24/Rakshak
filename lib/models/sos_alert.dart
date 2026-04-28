@@ -37,29 +37,6 @@ class SosAlert {
     );
   }
 
-  // Mock alerts for fallback
-  static List<SosAlert> mockAlerts() => [
-    SosAlert(
-      id: 'mock-001',
-      zoneName: 'Mylapore',
-      riskLevel: 'HIGH',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 3)),
-      status: 'dispatched',
-      lat: 13.0339,
-      lng: 80.2707,
-      pincode: '600004',
-      sosId: 'mock-001',
-    ),
-    SosAlert(
-      id: 'mock-002',
-      zoneName: 'T. Nagar',
-      riskLevel: 'HIGH',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 7)),
-      status: 'dispatched',
-      lat: 13.0350,
-      lng: 80.2323,
-      pincode: '600017',
-      sosId: 'mock-002',
-    ),
-  ];
+  // No mock fallback — return empty list when backend is unavailable
+  static List<SosAlert> mockAlerts() => [];
 }
